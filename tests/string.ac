@@ -1,0 +1,40 @@
+# Comparison
+assert("A" == "A");
+assert("abc" == "ab" + "c");
+assert("a" != "A");
+assert("" != " ");
+assert("A" >= "A");
+assert("B" >= "A");
+assert("A" <= "AB");
+assert("AB" <= "AB");
+assert("a" < "b");
+assert("abc" < "abcd");
+assert("z" > "x");
+assert("xyz" > "xy");
+
+# Concat
+let breakfast = "eggs";
+breakfast = "bacon, " + breakfast + ", coffee";
+assert(breakfast == "bacon, eggs, coffee");
+assert("" + "" == "");
+assert(" " + " " == "  ");
+assert("coffee" + "" == "coffee");
+assert("coffee" + " " == "coffee ");
+
+# Multiply
+let drink = "co" + "f" * 2 + "e" * 2;
+assert(drink == "coffee");
+
+assert(3 * "abc" == "abcabcabc");
+assert("" * 10 == "");
+assert("a" * 0 == "");
+
+# Copy
+let fruit1 = "orange";
+let fruit2 = fruit1;
+assert(fruit1 == fruit2);
+assert(fruit2 == "orange");
+
+fruit1 = "kiwi";
+assert(fruit1 != fruit2);
+assert(fruit2 == "orange");

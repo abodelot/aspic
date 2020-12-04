@@ -1,0 +1,37 @@
+# Add
+let a = 10 + 20 + 30;
+assert(a == 60);
+
+# Subtract
+assert(10 - 3 == 7);
+assert(100 - 50 - 2 == 48);
+let c = -1;
+assert(c == 0 - 1);
+
+# Multiply
+a = a * 2;
+assert(a == 120);
+assert(23 * 0 == 0);
+assert(23 * 1 == 23);
+assert(23 * 1 * 0 == 0);
+
+# Divide
+let b = 10 / 4 * 3;
+assert(b == 7.5);
+
+# Modulo
+a = 20 % 6;
+assert(a == 2);
+
+# Unary +
+let e = +2;
+assert(e == 2);
+
+# Unary -
+let f = -4;
+f = +f; # noop
+assert(f == -4);
+
+# Grouping
+assert(4 * (-10 + 5) * 1.5 / -2 == 15);
+assert(((1 - 10 * 3) + 4 * 5) - 1 == -10);
