@@ -1,0 +1,13 @@
+on: push
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt install build-essential valgrind clang
+      - name: Build
+        run: make
+      - name: Unit tests
+        run: ./spec.sh

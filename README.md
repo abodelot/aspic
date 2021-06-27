@@ -1,5 +1,7 @@
 # Aspic
 
+![workflow](https://github.com/abodelot/aspic/actions/workflows/ci.yml/badge.svg)
+
 ## How to compile
 
     make
