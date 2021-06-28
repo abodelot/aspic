@@ -1,5 +1,6 @@
 #include "utils.h"
 
+#include <stdarg.h> // va_list
 #include <stdio.h>
 
 void* xrealloc(void* pointer, size_t object_size, size_t n)

@@ -2,12 +2,17 @@ on: push
 
 jobs:
   ci:
+    name: CI
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        cc: [clang, gcc]
     steps:
       - uses: actions/checkout@v2
       - name: Install dependencies
-        run: sudo apt install build-essential valgrind clang
+        run: sudo apt install build-essential valgrind ${{ matrix.cc }}
       - name: Build
-        run: make
+        run: make CC=${{ matrix.cc }}
       - name: Unit tests
         run: ./spec.sh

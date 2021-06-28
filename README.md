@@ -4,7 +4,15 @@
 
 ## How to compile
 
+Install dependencies:
+
+    sudo apt install libreadline-dev
+
+Compile with make:
+
     make
+
+Both `clang` (default) and `gcc` are supported. Use `make CC=gcc` to override C compiler.
 
 ## How to run
 

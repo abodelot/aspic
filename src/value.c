@@ -58,7 +58,7 @@ void value_print(Value value)
         printf(value.as.boolean ? "true" : "false");
         break;
     case TYPE_CFUNC:
-        printf("cfunc <%p>", (void*)value.as.cfunc);
+        printf("cfunc <%lx>", (size_t) value.as.cfunc);
         break;
     case TYPE_NUMBER:
         printf("%g", value.as.number);

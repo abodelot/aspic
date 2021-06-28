@@ -187,21 +187,31 @@ static VmResult vm_run()
             break;
 
         // Binary operators
-        case OP_ADD:
-            vm_push(op_add(vm_pop(), vm_pop()));
+        case OP_ADD: {
+            Value v = vm_pop();
+            vm_push(op_add(v, vm_pop()));
             break;
-        case OP_SUBTRACT:
-            vm_push(op_subtract(vm_pop(), vm_pop()));
+        }
+        case OP_SUBTRACT: {
+            Value v = vm_pop();
+            vm_push(op_subtract(v, vm_pop()));
             break;
-        case OP_MULTIPLY:
-            vm_push(op_multiply(vm_pop(), vm_pop()));
+        }
+        case OP_MULTIPLY: {
+            Value v = vm_pop();
+            vm_push(op_multiply(v, vm_pop()));
             break;
-        case OP_DIVIDE:
-            vm_push(op_divide(vm_pop(), vm_pop()));
+        }
+        case OP_DIVIDE: {
+            Value v = vm_pop();
+            vm_push(op_divide(v, vm_pop()));
             break;
-        case OP_MODULO:
-            vm_push(op_modulo(vm_pop(), vm_pop()));
+        }
+        case OP_MODULO: {
+            Value v = vm_pop();
+            vm_push(op_modulo(v, vm_pop()));
             break;
+        }
 
         // Comparators
         case OP_EQUAL:
@@ -210,22 +220,24 @@ static VmResult vm_run()
         case OP_NOT_EQUAL:
             vm_push(make_bool(!op_equal(vm_pop(), vm_pop())));
             break;
-        case OP_GREATER:
-            vm_push(op_greater(vm_pop(), vm_pop()));
+        case OP_GREATER: {
+            Value v = vm_pop();
+            vm_push(op_greater(v, vm_pop()));
             break;
-        case OP_GREATER_EQUAL:
-            vm_push(op_greater_equal(vm_pop(), vm_pop()));
+        }
+        case OP_GREATER_EQUAL: {
+            Value v = vm_pop();
+            vm_push(op_greater_equal(v, vm_pop()));
             break;
+        }
         case OP_LESS: {
-            // Swap args
-            Value x = vm_pop();
-            vm_push(op_greater(vm_pop(), x));
+            Value v = vm_pop();
+            vm_push(op_greater(vm_pop(), v));
             break;
         }
         case OP_LESS_EQUAL: {
-            // Swap args
-            Value x = vm_pop();
-            vm_push(op_greater_equal(vm_pop(), x));
+            Value v = vm_pop();
+            vm_push(op_greater_equal(vm_pop(), v));
             break;
         }
 
