@@ -4,6 +4,7 @@
 #include "chunk.h"
 #include "value.h"
 #include "hashtable.h"
+#include "stringset.h"
 
 #define VM_STACK_MAX 256
 
@@ -19,7 +20,7 @@ typedef struct {
     Object* objects_head;
 
     // Set of all strings
-    Hashtable string_pool;
+    StringSet string_pool;
 
     // Hashtable of global variables
     Hashtable globals;
@@ -53,7 +54,7 @@ void vm_register_object(Object* object);
  * Check if a string is already interned
  * @return string object if any, otherwise NULL
  */
-ObjectString* vm_find_string(const char* buffer, int length, uint32_t hash);
+const ObjectString* vm_find_string(const char* buffer, int length, uint32_t hash);
 
 /**
  * Intern a string object in the VM string pool

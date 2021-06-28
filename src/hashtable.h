@@ -4,11 +4,18 @@
 #include "value.h"
 #include "object.h"
 
-// Hashtable is not the owner of keys and value
-// Keys are pointer, they must be kept valid during hashtable lifetime
-// Value are shallow-copied, internal pointers must allow be kept valid
+/**
+ * Hashtable<const ObjectString*, Value>
+ *
+ * The hashtable is not the owner of keys and values.
+ * Keys are ObjectString points, they must be kept valid during hashtable lifetime
+ * Value are shallow-copied, internal pointers must be kept valid
+ *
+ * The read_only mecanism prevents from updating a value once it's inserted.
+ */
+
 typedef struct {
-    ObjectString* key;
+    const ObjectString* key;
     Value value;
     bool read_only;
 } Entry;
@@ -34,7 +41,7 @@ void hashtable_free(Hashtable* table);
  * Set a new (key, value) pair
  * @return true if new key was inserted, otherwise false
  */
-bool hashtable_set(Hashtable* table, ObjectString* key, Value value, bool read_only);
+bool hashtable_set(Hashtable* table, const ObjectString* key, Value value, bool read_only);
 
 typedef enum {
     HASHTABLE_MISS,
@@ -42,19 +49,16 @@ typedef enum {
     HASHTABLE_SUCCESS
 } HashtableLookup;
 
-HashtableLookup hashtable_update(Hashtable* table, ObjectString* key, Value value);
+/**
+ * Update a value if key already exists
+ */
+HashtableLookup hashtable_update(Hashtable* table, const ObjectString* key, Value value);
 
 /**
  * Get value for a given key
  * @return value associated to key, otherwise NULL
  */
 Value* hashtable_get(const Hashtable* table, const ObjectString* key);
-
-/**
- * Detect if a key is already present
- * @return key if already present, otherwise NULL
- */
-ObjectString* hashtable_has_key_cstr(Hashtable* table, const char* chars, size_t length, uint32_t hash);
 
 /**
  * Delete an entry

@@ -89,7 +89,7 @@ static VmResult vm_run()
             if (slot != vm.stack) {
                 printf(", ");
             }
-            value_print(*slot);
+            value_repr(*slot);
         }
         printf("]\n");
 #endif
@@ -259,7 +259,7 @@ void vm_init()
     vm_reset_stack();
     vm.objects_head = NULL;
 
-    hashtable_init(&vm.string_pool);
+    stringset_init(&vm.string_pool);
 
     // Global variables
     hashtable_init(&vm.globals);
@@ -276,7 +276,7 @@ void vm_init()
 void vm_free()
 {
     hashtable_free(&vm.globals);
-    hashtable_free(&vm.string_pool);
+    stringset_free(&vm.string_pool);
 
     // Loop on <objects_head> linked list and free every object
     Object* object = vm.objects_head;
@@ -294,16 +294,15 @@ void vm_register_object(Object* object)
     vm.objects_head = object;
 }
 
-ObjectString* vm_find_string(const char* buffer, int length, uint32_t hash)
+const ObjectString* vm_find_string(const char* buffer, int length, uint32_t hash)
 {
-    return hashtable_has_key_cstr(&vm.string_pool, buffer, length, hash);
+    return stringset_has_cstr(&vm.string_pool, buffer, length, hash);
 }
 
 ObjectString* vm_intern_string(ObjectString* string)
 {
-    static const Value dummy = (Value) { .type = TYPE_NULL };
     // Register in string_pool (set) for string interning
-    hashtable_set(&vm.string_pool, string, dummy, false);
+    stringset_add(&vm.string_pool, string);
 
     // Register in objects_head (linked list) for garbage collecting
     vm_register_object((Object*)string);
@@ -313,12 +312,7 @@ ObjectString* vm_intern_string(ObjectString* string)
 void vm_debug_strings()
 {
     printf("=== vm::strings ===\n");
-    for (size_t i = 0; i < vm.string_pool.capacity; ++i) {
-        Entry* entry = &vm.string_pool.entries[i];
-        if (entry->key) {
-            printf("\"%s\"\n", entry->key->chars);
-        }
-    }
+    stringset_print(&vm.string_pool);
 }
 
 void vm_debug_globals()

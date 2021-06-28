@@ -25,9 +25,9 @@ struct ObjectString {
 /**
  * ObjectString ctor
  */
-ObjectString* string_new(const char* chars, size_t length);
-ObjectString* string_concat(const ObjectString* a, const ObjectString* b);
-ObjectString* string_multiply(const ObjectString* source, size_t n);
+const ObjectString* string_new(const char* chars, size_t length);
+const ObjectString* string_concat(const ObjectString* a, const ObjectString* b);
+const ObjectString* string_multiply(const ObjectString* source, size_t n);
 
 /**
  * Compare two strings for equality

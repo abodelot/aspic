@@ -30,7 +30,7 @@ Value make_error(const char* error)
     return (Value) { .type = TYPE_ERROR, .as.error = error };
 }
 
-Value make_string(ObjectString* string)
+Value make_string(const ObjectString* string)
 {
     return (Value) { .type = TYPE_OBJECT, .as.object = (Object*)string };
 }

@@ -22,8 +22,7 @@ static Entry* find_entry(Entry* entries, size_t capacity, const ObjectString* ke
                 // Empty entry found
                 return tombstone != NULL ? tombstone : entry;
             } else if (tombstone == NULL) {
-                // Don't treat tombstone like an empty slot,
-                // keep iterating
+                // Don't treat tombstone like an empty slot, keep iterating
                 tombstone = entry;
             }
         } else if (string_equal(entry->key, key)) {
@@ -92,7 +91,7 @@ void hashtable_free(Hashtable* table)
     hashtable_init(table);
 }
 
-bool hashtable_set(Hashtable* table, ObjectString* key, Value value, bool read_only)
+bool hashtable_set(Hashtable* table, const ObjectString* key, Value value, bool read_only)
 {
     // Ensure the table capacity is above overload factor
     if (table->count_with_tombstones + 1 > table->capacity * HASHTABLE_MAX_LOAD) {
@@ -120,7 +119,7 @@ bool hashtable_set(Hashtable* table, ObjectString* key, Value value, bool read_o
     return new_key;
 }
 
-HashtableLookup hashtable_update(Hashtable* table, ObjectString* key, Value value)
+HashtableLookup hashtable_update(Hashtable* table, const ObjectString* key, Value value)
 {
     Entry* entry = find_entry(table->entries, table->capacity, key);
     if (entry->key == NULL) {
@@ -141,33 +140,6 @@ Value* hashtable_get(const Hashtable* table, const ObjectString* key)
     }
     Entry* entry = find_entry(table->entries, table->capacity, key);
     return entry->key == NULL ? NULL : &entry->value;
-}
-
-ObjectString* hashtable_has_key_cstr(Hashtable* table, const char* chars, size_t length, uint32_t hash)
-{
-    if (table->count == 0) {
-        return NULL;
-    }
-
-    uint32_t index = hash % table->capacity;
-
-    for (;;) {
-        Entry* entry = &table->entries[index];
-
-        if (entry->key == NULL) {
-            // Stop if we find an empty non-tombstone entry
-            if (entry->value.type == TYPE_NULL) {
-                return NULL;
-            }
-        } else if (entry->key->hash == hash
-            && entry->key->length == (int)length
-            && memcmp(entry->key->chars, chars, length) == 0) {
-            // We found it
-            return entry->key;
-        }
-        index = (index + 1) % table->capacity;
-    }
-    return NULL;
 }
 
 bool hashtable_delete(Hashtable* table, const ObjectString* key)

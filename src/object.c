@@ -44,17 +44,17 @@ static ObjectString* string_allocate(size_t length)
 }
 
 // ctor: handle string interning
-ObjectString* string_new(const char* chars, size_t length)
+const ObjectString* string_new(const char* chars, size_t length)
 {
     uint32_t hash = hash_string(chars, length);
 
     // Check if string is already interned in the VM
-    ObjectString* string = vm_find_string(chars, length, hash);
-    if (string) {
-        return string;
+    const ObjectString* interned = vm_find_string(chars, length, hash);
+    if (interned) {
+        return interned;
     }
 
-    string = string_allocate(length);
+    ObjectString* string = string_allocate(length);
     memcpy(string->chars, chars, length);
 
     string->hash = hash;
@@ -63,7 +63,7 @@ ObjectString* string_new(const char* chars, size_t length)
 }
 
 // ctor: handle string interning
-ObjectString* string_concat(const ObjectString* a, const ObjectString* b)
+const ObjectString* string_concat(const ObjectString* a, const ObjectString* b)
 {
     size_t length = a->length + b->length;
     ObjectString* string = string_allocate(length);
@@ -74,7 +74,7 @@ ObjectString* string_concat(const ObjectString* a, const ObjectString* b)
     string->hash = hash_string(string->chars, length);
 
     // Check if string was already interned in the VM
-    ObjectString* interned = vm_find_string(string->chars, length, string->hash);
+    const ObjectString* interned = vm_find_string(string->chars, length, string->hash);
     if (interned) {
         // Destroy object and return interned instead
         object_free((Object*)string);
@@ -85,7 +85,7 @@ ObjectString* string_concat(const ObjectString* a, const ObjectString* b)
 }
 
 // ctor: handle string interning
-ObjectString* string_multiply(const ObjectString* source, size_t n)
+const ObjectString* string_multiply(const ObjectString* source, size_t n)
 {
     size_t length = source->length * n;
     ObjectString* string = string_allocate(length);
@@ -97,7 +97,7 @@ ObjectString* string_multiply(const ObjectString* source, size_t n)
     string->hash = hash_string(string->chars, length);
 
     // Check if string was already interned in the VM
-    ObjectString* interned = vm_find_string(string->chars, length, string->hash);
+    const ObjectString* interned = vm_find_string(string->chars, length, string->hash);
     if (interned) {
         // Destroy object and return interned instead
         object_free((Object*)string);

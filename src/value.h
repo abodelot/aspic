@@ -40,7 +40,7 @@ Value make_null();
 Value make_error(const char* error);
 
 // From an already created ObjectString
-Value make_string(ObjectString* string);
+Value make_string(const ObjectString* string);
 
 // From a buffer of chars, will create an internal ObjectString
 Value make_string_from_buffer(const char* chars, int length);
