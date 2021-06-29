@@ -1,8 +1,17 @@
 on: push
 
 jobs:
-  ci:
-    name: CI
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Install dependencies
+        run: sudo apt install clang-format
+      - name: Run clang-format
+        run: make lint
+  unit-tests:
+    name: Unit tests
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

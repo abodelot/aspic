@@ -36,4 +36,7 @@ mrproper: clean
 format:
 	clang-format src/*c -i
 
+lint:
+	clang-format src/*c --dry-run --Werror
+
 all: mrproper $(TARGET)
