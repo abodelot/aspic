@@ -175,8 +175,8 @@ void hashtable_print(const Hashtable* table)
     for (size_t i = 0; i < table->capacity; ++i) {
         Entry* entry = &table->entries[i];
         if (entry->key) {
-            printf("%-5s %-16s = ", entry->read_only ? "const" : "let", entry->key->chars);
-            value_print(entry->value);
+            printf("%s %-16s = ", entry->read_only ? "RO" : "RW", entry->key->chars);
+            value_repr(entry->value);
             printf(" [%s]\n", value_type(entry->value));
         }
     }

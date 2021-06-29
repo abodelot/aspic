@@ -51,14 +51,14 @@ Value make_string_from_cstr(const char* str)
     };
 }
 
-void value_print(Value value)
+void value_repr(Value value)
 {
     switch (value.type) {
     case TYPE_BOOL:
         printf(value.as.boolean ? "true" : "false");
         break;
     case TYPE_CFUNC:
-        printf("cfunc <%lx>", (size_t) value.as.cfunc);
+        printf("<cfunc @%lx>", (size_t)value.as.cfunc);
         break;
     case TYPE_NUMBER:
         printf("%g", value.as.number);
@@ -70,24 +70,9 @@ void value_print(Value value)
         printf("[RuntimeError] %s", value.as.error);
         break;
     case TYPE_OBJECT:
-        object_print(value.as.object);
-        break;
-    }
-}
-
-void value_repr(Value value)
-{
-    switch (value.type) {
-    case TYPE_NUMBER:
-        printf("%g", value.as.number);
-        break;
-    case TYPE_OBJECT:
         if (value.as.object->type == OBJECT_STRING) {
             printf("\"%s\"", ((ObjectString*)value.as.object)->chars);
         }
-        break;
-    default:
-        value_print(value);
         break;
     }
 }

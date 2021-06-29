@@ -49,11 +49,6 @@ Value make_string_from_buffer(const char* chars, int length);
 Value make_string_from_cstr(const char* str);
 
 /**
- * Print value to stdout in a human-readable format
- */
-void value_print(Value value);
-
-/**
  * Print value to stdout in their canonical representation
  */
 void value_repr(Value value);

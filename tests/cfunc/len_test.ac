@@ -1,0 +1,6 @@
+# len
+assert(len("") == 0);
+assert(len(" ") == 1);
+assert(len("a") == 1);
+assert(len("abc") == 3);
+assert(len("abc" + "def") == 6);

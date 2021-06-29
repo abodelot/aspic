@@ -1,0 +1,17 @@
+# string
+assert(str("hello") == "hello");
+assert(str("0") == "0");
+assert(str("") == "");
+
+# number
+assert(str(0) == "0");
+assert(str(0.1) == "0.1");
+assert(str(-3) == "-3");
+assert(str(-2.5) == "-2.5");
+
+# bool
+assert(str(true) == "true");
+assert(str(false) == "false");
+
+# null
+assert(str(null) == "");

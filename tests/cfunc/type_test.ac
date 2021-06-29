@@ -1,0 +1,22 @@
+# string
+assert(type("hello") == "string");
+assert(type("0") == "string");
+assert(type("") == "string");
+
+# number
+assert(type(0) == "number");
+assert(type(0.1) == "number");
+assert(type(-3) == "number");
+assert(type(-2.5) == "number");
+
+# bool
+assert(type(true) == "bool");
+assert(type(false) == "bool");
+
+# null
+assert(type(null) == "null");
+
+# cfunc
+assert(type(type) == "cfunc");
+assert(type(assert) == "cfunc");
+assert(type(type(type)) == "string");
