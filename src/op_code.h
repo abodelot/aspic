@@ -79,9 +79,6 @@ Value op_divide(Value b, Value a);
 // OP_MODULO
 Value op_modulo(Value b, Value a);
 
-// OP_EQUAL
-bool op_equal(Value b, Value a);
-
 // OP_GREATER
 Value op_greater(Value b, Value a);
 

@@ -99,6 +99,26 @@ const char* value_type(Value value)
     return NULL;
 }
 
+bool value_equal(Value b, Value a)
+{
+    if (a.type == b.type) {
+        switch (a.type) {
+        case TYPE_BOOL:
+            return a.as.boolean == b.as.boolean;
+        case TYPE_NULL:
+            // Two null values are always equal
+            return true;
+        case TYPE_NUMBER:
+            return a.as.number == b.as.number;
+        case TYPE_OBJECT:
+            return object_equal(a.as.object, b.as.object);
+        default:
+            break; // Unreachable
+        }
+    }
+    return false;
+}
+
 bool value_truthy(Value value)
 {
     // Only false and null are false, everything else is truthy

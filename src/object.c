@@ -4,12 +4,12 @@
 #include <stdio.h>
 #include <string.h>
 
-static uint32_t hash_string(const char* str, int length)
+static uint32_t hash_string(const char* str, size_t length)
 {
     // FNV-1a hash function
     uint32_t hash = 2166136261u;
 
-    for (int i = 0; i < length; ++i) {
+    for (size_t i = 0; i < length; ++i) {
         hash ^= str[i];
         hash *= 16777619;
     }

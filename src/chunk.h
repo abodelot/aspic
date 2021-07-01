@@ -46,20 +46,20 @@ void chunk_free(Chunk* chunk);
 void chunk_write(Chunk* chunk, uint8_t byte, int lineno);
 
 /**
- * Write an OpCode to load a constant, and index value of the constant.
- * If index fits on 1 byte, OP_CONSTANT is used.
- * If index fits on 2 bytes, OP_CONSTANT_16 is used.
- * @param index: the constant index value (max: 2^16 - 1)
+ * Write the OpCode to load a constant, followed by the index value of the constant.
+ * If index fits on 1 byte, write OP_CONSTANT.
+ * If index fits on 2 bytes, write OP_CONSTANT_16.
+ * @param index: the constant index value, from chunk_register_constant (max: 2^16 - 1)
  * @param lineno: line number from source
  * @return true if success
  */
-bool chunk_write_constant(Chunk* chunk, int index, int lineno);
+bool chunk_write_constant(Chunk* chunk, unsigned int index, int lineno);
 
 /**
  * Add a new constant to the chunk
  * @return the index where the constant was appended
  */
-int chunk_add_constant(Chunk*, Value value);
+unsigned int chunk_register_constant(Chunk*, Value value);
 
 /**
  * Get line number for the given instruction offset

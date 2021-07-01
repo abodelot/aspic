@@ -83,7 +83,7 @@ void chunk_write(Chunk* chunk, uint8_t byte, int lineno)
     }
 }
 
-bool chunk_write_constant(Chunk* chunk, int index, int lineno)
+bool chunk_write_constant(Chunk* chunk, unsigned int index, int lineno)
 {
     if (index <= UINT8_MAX) {
         chunk_write(chunk, OP_CONSTANT, lineno);
@@ -97,14 +97,19 @@ bool chunk_write_constant(Chunk* chunk, int index, int lineno)
         chunk_write(chunk, index & 0xff, lineno);
         return true;
     }
-    // Unsupported
+    // Unsupported, index cannot fit on 2 bytes
     return false;
 }
 
-int chunk_add_constant(Chunk* chunk, Value value)
+unsigned int chunk_register_constant(Chunk* chunk, Value value)
 {
+    // Check if value is already registered
+    int index = value_array_find(&chunk->constants, value);
+    if (index >= 0) {
+        return index;
+    }
+    // Store value and return index
     value_array_push(&chunk->constants, value);
-
     return chunk->constants.count - 1;
 }
 

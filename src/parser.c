@@ -219,7 +219,7 @@ static int emit_constant(Value constant)
 {
     // Register the constant value in the chunk
     Chunk* chunk = current_chunk();
-    int constant_index = chunk_add_constant(chunk, constant);
+    int constant_index = chunk_register_constant(chunk, constant);
 
     // Write load instruction + index
     if (!chunk_write_constant(current_chunk(), constant_index, parser.previous.line)) {
@@ -279,19 +279,19 @@ static void expression_statement()
     emit_byte(OP_POP);
 }
 
-static uint8_t emit_variable(const char* error)
+static int emit_variable(const char* error)
 {
     consume(TOKEN_IDENTIFIER, error);
 
     // Register the identifer as a constant value in the chunk
     Value identifier = make_string_from_buffer(parser.previous.start, parser.previous.length);
     Chunk* chunk = current_chunk();
-    return chunk_add_constant(chunk, identifier);
+    return chunk_register_constant(chunk, identifier);
 }
 
 static void var_statement(bool const_lock)
 {
-    uint8_t global = emit_variable("Expected variable name");
+    int global_index = emit_variable("Expected variable name");
 
     if (match(TOKEN_EQUAL)) {
         expression();
@@ -301,9 +301,18 @@ static void var_statement(bool const_lock)
 
     consume(TOKEN_SEMICOLON, "Expected ';' after variable declaration");
 
-    // Declare variable
-    emit_byte(const_lock ? OP_DECL_GLOBAL_CONST : OP_DECL_GLOBAL);
-    emit_byte(global);
+    // Declare global variable
+    if (global_index <= UINT8_MAX) {
+        emit_byte(const_lock ? OP_DECL_GLOBAL_CONST : OP_DECL_GLOBAL);
+        emit_byte(global_index);
+    } else if (global_index <= UINT16_MAX) {
+        emit_byte(const_lock ? OP_DECL_GLOBAL_CONST_16 : OP_DECL_GLOBAL_16);
+        // Convert global index to a 2-bytes integer
+        emit_byte((global_index >> 8) & 0xff);
+        emit_byte(global_index & 0xff);
+    } else {
+        error("Cannot declare over UINT16_MAX constants");
+    }
 }
 
 static void statement()
@@ -444,18 +453,34 @@ static void parse_fn_call(bool _assignable)
 static void named_variable(Token* token, bool assignable)
 {
     // Register the identifier name as a constant in the chunk
-    uint8_t constant_index = chunk_add_constant(
+    int constant_index = chunk_register_constant(
         current_chunk(), make_string_from_buffer(token->start, token->length));
+    if (constant_index > UINT16_MAX) {
+        error("Cannot use more than UINT16_MAX constants");
+    }
 
     // If the identifier is followed by =, this is an assignment (setter).
     // Otherwise, this is an identifier access (getter).
     if (assignable && match(TOKEN_EQUAL)) {
         expression();
-        emit_byte(OP_SET_GLOBAL);
+        if (constant_index <= UINT8_MAX) {
+            emit_byte(OP_SET_GLOBAL);
+            emit_byte(constant_index);
+        } else if (constant_index <= UINT16_MAX) {
+            emit_byte(OP_SET_GLOBAL_16);
+            emit_byte((constant_index >> 8) & 0xff);
+            emit_byte(constant_index & 0xff);
+        }
     } else {
-        emit_byte(OP_GET_GLOBAL);
+        if (constant_index <= UINT8_MAX) {
+            emit_byte(OP_GET_GLOBAL);
+            emit_byte(constant_index);
+        } else if (constant_index <= UINT16_MAX) {
+            emit_byte(OP_GET_GLOBAL_16);
+            emit_byte((constant_index >> 8) & 0xff);
+            emit_byte(constant_index & 0xff);
+        }
     }
-    emit_byte(constant_index);
 }
 
 static void parse_variable(bool assignable)

@@ -13,12 +13,18 @@ typedef struct {
 } ValueArray;
 
 // Ctor
-void value_array_init(ValueArray* value_array);
+void value_array_init(ValueArray* self);
 
 // Dtor
-void value_array_free(ValueArray* value_array);
+void value_array_free(ValueArray* self);
 
 // Append a value
-void value_array_push(ValueArray* value_array, Value value);
+void value_array_push(ValueArray* self, Value value);
+
+/**
+ * Find a given value
+ * @return value index in array if present, otherwise -1
+ */
+int value_array_find(const ValueArray* self, Value value);
 
 #endif

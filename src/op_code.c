@@ -169,26 +169,6 @@ Value op_modulo(Value b, Value a)
     return binary_op_error(OP_MODULO, a, b);
 }
 
-bool op_equal(Value b, Value a)
-{
-    if (a.type == b.type) {
-        switch (a.type) {
-        case TYPE_BOOL:
-            return a.as.boolean == b.as.boolean;
-        case TYPE_NULL:
-            // Two null values are always equal
-            return true;
-        case TYPE_NUMBER:
-            return a.as.number == b.as.number;
-        case TYPE_OBJECT:
-            return object_equal(a.as.object, b.as.object);
-        default:
-            break; // Unreachable
-        }
-    }
-    return false;
-}
-
 Value op_greater(Value b, Value a)
 {
     if (a.type == b.type) {

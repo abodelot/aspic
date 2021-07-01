@@ -59,6 +59,11 @@ void value_repr(Value value);
 const char* value_type(Value value);
 
 /**
+ * Check if two values are equal
+ */
+bool value_equal(Value b, Value a);
+
+/**
  * Convert a value to boolean
  */
 bool value_truthy(Value value);

@@ -7,33 +7,39 @@
 #include "utils.h"
 #include "value.h"
 
+#include <assert.h>
 #include <stdio.h>
 #include <string.h>
 
 // Global, unique instance
 VM vm;
 
-static Value vm_peek(int distance)
+inline static Value vm_peek(int distance)
 {
     return vm.stack_top[-1 - distance];
 }
 
-static uint8_t vm_read_byte()
+inline static uint8_t vm_read_byte()
 {
     // Read next byte and move IP forward by 1
     return *(vm.ip++);
 }
 
-static uint16_t vm_read_16()
+inline static uint16_t vm_read_16()
 {
     // Read next 2 bytes and move IP forward by 2
     vm.ip += 2;
     return vm.ip[-2] << 8 | vm.ip[-1];
 }
 
-static Value read_constant()
+inline static Value read_constant()
 {
     return vm.chunk->constants.values[*(vm.ip++)];
+}
+
+inline static Value read_constant_16()
+{
+    return vm.chunk->constants.values[vm_read_16()];
 }
 
 static void vm_reset_stack()
@@ -49,7 +55,7 @@ static void vm_push(Value value)
 
 static Value vm_pop()
 {
-#ifndef ASPIC_DEBUG
+#if ASPIC_DEBUG
     if (vm.stack_top == vm.stack) {
         fprintf(stderr, "[fatal] vm_pop: cannot pop empty stack");
         exit(1);
@@ -76,6 +82,41 @@ static VmResult vm_report_error(const Value* value)
     return VM_RUNTIME_ERROR;
 }
 
+// Declare a new global variable
+static void vm_decl_global(const ObjectString* name, bool read_only)
+{
+    if (!hashtable_set(&vm.globals, name, vm_pop(), read_only)) {
+        vm_push(make_error(formatstr(
+            "Identifier '%s' has already been declared", name->chars)));
+    }
+}
+
+// Push global variable value onto the stack
+static void vm_push_global_value(const ObjectString* name)
+{
+    Value* value = hashtable_get(&vm.globals, name);
+    if (value) {
+        vm_push(*value);
+    } else {
+        vm_push(make_error(formatstr(
+            "Identifier '%s' is not defined", name->chars)));
+    }
+}
+
+// Update global variable value
+static void vm_update_global_value(const ObjectString* name)
+{
+    HashtableLookup res = hashtable_update(&vm.globals, name, vm_peek(0));
+    if (res == HASHTABLE_MISS) {
+        vm_push(make_error(formatstr(
+            "Cannot assign to undefined variable '%s'", name->chars)));
+    }
+    if (res == HASHTABLE_READ_ONLY) {
+        vm_push(make_error(formatstr(
+            "Cannot assign to constant variable '%s'", name->chars)));
+    }
+}
+
 static VmResult vm_run()
 {
 #if ASPIC_DEBUG
@@ -99,60 +140,38 @@ static VmResult vm_run()
         case OP_RETURN:
             return VM_OK;
 
-        case OP_CONSTANT: {
+        case OP_CONSTANT:
             vm_push(read_constant());
             break;
-        }
-
-        case OP_CONSTANT_16: {
-            uint16_t index = vm_read_16();
-            vm_push(vm.chunk->constants.values[index]);
+        case OP_CONSTANT_16:
+            vm_push(read_constant_16());
             break;
-        }
 
-        case OP_DECL_GLOBAL: {
-            ObjectString* name = (ObjectString*)read_constant().as.object;
-            if (!hashtable_set(&vm.globals, name, vm_pop(), false)) {
-                vm_push(make_error(formatstr(
-                    "Identifier '%s' has already been declared", name->chars)));
-            }
+        // Global variables
+        case OP_DECL_GLOBAL:
+            vm_decl_global((ObjectString*)read_constant().as.object, false);
             break;
-        }
-
-        case OP_DECL_GLOBAL_CONST: {
-            ObjectString* name = (ObjectString*)read_constant().as.object;
-            if (!hashtable_set(&vm.globals, name, vm_pop(), true)) {
-                vm_push(make_error(formatstr(
-                    "Identifier '%s' has already been declared", name->chars)));
-            }
+        case OP_DECL_GLOBAL_CONST:
+            vm_decl_global((ObjectString*)read_constant().as.object, true);
             break;
-        }
-
-        case OP_GET_GLOBAL: {
-            ObjectString* name = (ObjectString*)read_constant().as.object;
-            Value* value = hashtable_get(&vm.globals, name);
-            if (value) {
-                vm_push(*value);
-            } else {
-                vm_push(make_error(formatstr(
-                    "Identifier '%s' is not defined", name->chars)));
-            }
+        case OP_GET_GLOBAL:
+            vm_push_global_value((ObjectString*)read_constant().as.object);
             break;
-        }
-
-        case OP_SET_GLOBAL: {
-            ObjectString* name = (ObjectString*)read_constant().as.object;
-            HashtableLookup res = hashtable_update(&vm.globals, name, vm_peek(0));
-            if (res == HASHTABLE_MISS) {
-                vm_push(make_error(formatstr(
-                    "Cannot assign to undefined variable '%s'", name->chars)));
-            }
-            if (res == HASHTABLE_READ_ONLY) {
-                vm_push(make_error(formatstr(
-                    "Cannot assign to constant variable '%s'", name->chars)));
-            }
+        case OP_SET_GLOBAL:
+            vm_update_global_value((ObjectString*)read_constant().as.object);
             break;
-        }
+        case OP_DECL_GLOBAL_16:
+            vm_decl_global((ObjectString*)read_constant_16().as.object, false);
+            break;
+        case OP_DECL_GLOBAL_CONST_16:
+            vm_decl_global((ObjectString*)read_constant_16().as.object, true);
+            break;
+        case OP_GET_GLOBAL_16:
+            vm_push_global_value((ObjectString*)read_constant_16().as.object);
+            break;
+        case OP_SET_GLOBAL_16:
+            vm_update_global_value((ObjectString*)read_constant_16().as.object);
+            break;
 
         case OP_POP:
             vm_pop();
@@ -215,10 +234,10 @@ static VmResult vm_run()
 
         // Comparators
         case OP_EQUAL:
-            vm_push(make_bool(op_equal(vm_pop(), vm_pop())));
+            vm_push(make_bool(value_equal(vm_pop(), vm_pop())));
             break;
         case OP_NOT_EQUAL:
-            vm_push(make_bool(!op_equal(vm_pop(), vm_pop())));
+            vm_push(make_bool(!value_equal(vm_pop(), vm_pop())));
             break;
         case OP_GREATER: {
             Value v = vm_pop();
@@ -256,6 +275,9 @@ static VmResult vm_run()
             }
             break;
         }
+        default:
+            assert(false); // Unreachable
+            break;
         }
 
         // Check if an error has been pushed in this iteration
@@ -263,6 +285,8 @@ static VmResult vm_run()
             return vm_report_error(vm.stack_top - 1);
         }
     }
+    // Program should end with an empty stack
+    assert(vm.stack == vm.stack_top);
     return VM_OK;
 }
 
