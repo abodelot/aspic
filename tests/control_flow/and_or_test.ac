@@ -1,0 +1,32 @@
+# and
+assert(true && true);
+assert(true && !false);
+assert(!false && true);
+assert(!false && !false);
+
+assert((10 && 20) == 20);
+assert((20 && 10) == 10);
+assert((10 && false) == false);
+assert((false && 10) == false);
+assert((10 && false) == false);
+assert((false && 10 == 10) == false);
+assert((false && 10 && false) == false);
+
+# or
+assert(true || true);
+assert(true || false);
+assert(false || true);
+assert(false || !false);
+
+assert((10 || 20) == 10);
+assert((20 || 10) == 20);
+assert((false || 30) == 30);
+assert((40 || false) == 40);
+assert((false || false) == false);
+assert((false || 10 || false) == 10);
+
+# precedence
+assert((10 && false || 2) == 2);
+assert((10 || false && 2) == 10);
+assert((false && true || false) == false);
+assert((false && false || true) == true);

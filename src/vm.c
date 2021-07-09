@@ -139,12 +139,30 @@ static VmResult vm_run()
         switch (instruction) {
         case OP_RETURN:
             return VM_OK;
-
-        case OP_CONSTANT:
-            vm_push(read_constant());
+        case OP_POP:
+            vm_pop();
             break;
-        case OP_CONSTANT_16:
-            vm_push(read_constant_16());
+
+        // Jumps
+        case OP_JUMP:
+            vm.ip += vm_read_16();
+            break;
+        case OP_JUMP_IF_TRUE: {
+            uint16_t offset = vm_read_16();
+            if (value_truthy(vm_peek(0))) {
+                vm.ip += offset;
+            }
+            break;
+        }
+        case OP_JUMP_IF_FALSE: {
+            uint16_t offset = vm_read_16();
+            if (!value_truthy(vm_peek(0))) {
+                vm.ip += offset;
+            }
+            break;
+        }
+        case OP_JUMP_BACK:
+            vm.ip -= vm_read_16();
             break;
 
         // Global variables
@@ -173,11 +191,25 @@ static VmResult vm_run()
             vm_update_global_value((ObjectString*)read_constant_16().as.object);
             break;
 
-        case OP_POP:
-            vm_pop();
+        // Local variables
+        case OP_GET_LOCAL:
+            vm_push(vm.stack[vm_read_byte()]);
+            break;
+        case OP_SET_LOCAL: {
+            uint8_t slot = vm_read_byte();
+            vm.stack[slot] = vm_peek(0);
+            break;
+        }
+
+        // Literals
+        case OP_CONSTANT:
+            vm_push(read_constant());
+            break;
+        case OP_CONSTANT_16:
+            vm_push(read_constant_16());
             break;
 
-        // Predefined constans
+        // Predefined literals
         case OP_ZERO:
             vm_push(make_number(0));
             break;

@@ -27,3 +27,7 @@ Or execute a program:
 ## Tests
 
 Run tests with `./spec.sh`
+
+## Credits
+
+- Inspired by [Crafting Interpreters](https://craftinginterpreters.com/), from [Bob Nystrom](https://github.com/munificent)

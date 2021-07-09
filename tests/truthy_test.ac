@@ -1,0 +1,22 @@
+# Everything is true, except false and null
+assert(true);
+assert(1);
+assert(0);
+assert(-1);
+assert("");
+assert("0");
+assert(" ");
+assert("false");
+assert("null");
+assert(true == true);
+assert(null == null);
+assert(false == false);
+assert(!null);
+assert(!false);
+
+let var = true;
+assert(var);
+var = false;
+assert(!var);
+var = null;
+assert(!var);

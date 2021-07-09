@@ -1,0 +1,20 @@
+# Global foo
+let foo = 10;
+if (true) {
+    # Local foo, shadowing global
+    let foo = 20;
+}
+assert(foo == 10);
+
+let bar = 30;
+let result = 0;
+if (bar) {
+    # Ref to global
+    let ref = bar;
+    # Shadowing global
+    let bar = 40 + ref;
+    # Copying local
+    result = bar;
+}
+bar = result;
+assert(bar == 70);

@@ -5,23 +5,36 @@
 
 // Each instruction starts with 1 byte operation code, defined as OpCode.
 typedef enum {
-    OP_CONSTANT,    // 1 byte operand
+    OP_RETURN,
+    OP_POP,
+
+    // Jumps (2 bytes operand: offset)
+    OP_JUMP,
+    OP_JUMP_IF_TRUE,
+    OP_JUMP_IF_FALSE,
+    OP_JUMP_BACK,
+
+    // Global variables (1 byte operand: constant index)
     OP_DECL_GLOBAL,
     OP_DECL_GLOBAL_CONST,
     OP_GET_GLOBAL,
     OP_SET_GLOBAL,
 
-    OP_CONSTANT_16, // 2 bytes operand
+    // Global variables (2 bytes operand: constant index)
     OP_DECL_GLOBAL_16,
     OP_DECL_GLOBAL_CONST_16,
     OP_GET_GLOBAL_16,
     OP_SET_GLOBAL_16,
 
-    OP_RETURN,
-    OP_POP,
+    // Local variables (1 byte operand: stack offset)
+    OP_GET_LOCAL,
+    OP_SET_LOCAL,
 
+    // Literals (1 byte and 2 bytes operand: constant index)
+    OP_CONSTANT,
+    OP_CONSTANT_16,
 
-    // Predefined constans
+    // Predefined constants
     OP_ZERO,
     OP_ONE,
     OP_TRUE,
@@ -48,7 +61,7 @@ typedef enum {
     OP_LESS,
     OP_LESS_EQUAL,
 
-    // Function call operator
+    // Function call
     OP_CALL,
 } OpCode;
 

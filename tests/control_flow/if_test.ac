@@ -1,0 +1,43 @@
+let a = 1;
+if (true) {
+    a = a + 1;
+}
+assert(a == 2);
+
+if (a == 0) {
+    a = "foobar";
+} else {
+    a = "foobaz";
+}
+assert(a == "foobaz");
+
+if (true) {
+    a = 1;
+    if (a == 1) {
+        a = 2;
+        if (a == 2) {
+            a = 3;
+        } else {
+            a = 0;
+        }
+    } else {
+        a = 0;
+    }
+} else {
+    a = 0;
+}
+assert(a == 3);
+
+# assignment in expression (true)
+if (a = 10) {
+    a = a + 1;
+}
+assert(a == 11);
+
+# assignment in expression (false)
+if (a = false) {
+    a = 30;
+} else {
+    a = "else branch";
+}
+assert(a == "else branch");

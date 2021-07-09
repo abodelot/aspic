@@ -37,7 +37,7 @@ static int instruction_with_constant(const char* name, const Chunk* chunk, int o
     value_repr(chunk->constants.values[constant_idx]);
     printf("\n");
 
-    return offset + 2; // 1 byte op code + 1 byte constant index
+    return offset + 2; // 1 byte op code + 1 byte operand (constant index)
 }
 
 static int instruction_with_constant_16(const char* name, const Chunk* chunk, int offset)
@@ -47,7 +47,15 @@ static int instruction_with_constant_16(const char* name, const Chunk* chunk, in
     value_repr(chunk->constants.values[constant_idx]);
     printf("\n");
 
-    return offset + 3; // 1 byte op code + 2 bytes constant index
+    return offset + 3; // 1 byte op code + 2 bytes operand (constant index)
+}
+
+static int instruction_jump(const char* name, int sign, const Chunk* chunk, int offset)
+{
+    uint16_t jump = chunk->code[offset + 1] << 8 | chunk->code[offset + 2];
+    printf("%-16s %4d -> %d\n", name, offset, offset + 3 + sign * jump);
+
+    return offset + 3; // 1 byte op + 2 bytes operand (jump offset)
 }
 
 int instruction_dump(const Chunk* chunk, int offset)
@@ -66,24 +74,42 @@ int instruction_dump(const Chunk* chunk, int offset)
     const char* desc = op2str(instruction);
 
     switch (instruction) {
-    case OP_CONSTANT:
+    case OP_RETURN:
+    case OP_POP:
+        return instruction_noarg(desc, offset);
+
+    // Jumps
+    case OP_JUMP:
+    case OP_JUMP_IF_TRUE:
+    case OP_JUMP_IF_FALSE:
+        return instruction_jump(desc, 1, chunk, offset);
+    case OP_JUMP_BACK:
+        return instruction_jump(desc, -1, chunk, offset);
+
+    // Global variables
     case OP_DECL_GLOBAL:
     case OP_DECL_GLOBAL_CONST:
     case OP_GET_GLOBAL:
     case OP_SET_GLOBAL:
         return instruction_with_constant(desc, chunk, offset);
-
-    case OP_CONSTANT_16:
     case OP_DECL_GLOBAL_16:
     case OP_DECL_GLOBAL_CONST_16:
     case OP_GET_GLOBAL_16:
     case OP_SET_GLOBAL_16:
         return instruction_with_constant_16(desc, chunk, offset);
 
-    case OP_RETURN:
-    case OP_POP:
+    // Local variables
+    case OP_GET_LOCAL:
+    case OP_SET_LOCAL:
+        return instruction_byte(desc, chunk, offset);
 
-    // Predefined constans
+    // Literals
+    case OP_CONSTANT:
+        return instruction_with_constant(desc, chunk, offset);
+    case OP_CONSTANT_16:
+        return instruction_with_constant_16(desc, chunk, offset);
+
+    // Predefined literals
     case OP_ZERO:
     case OP_ONE:
     case OP_TRUE:
@@ -111,6 +137,7 @@ int instruction_dump(const Chunk* chunk, int offset)
     case OP_LESS_EQUAL:
         return instruction_noarg(desc, offset);
 
+    // Call operator
     case OP_CALL:
         return instruction_byte(desc, chunk, offset);
 

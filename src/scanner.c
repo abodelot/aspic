@@ -102,7 +102,6 @@ static TokenType get_identifier_type()
         if (scanner.current - scanner.start > 1) {
             switch (scanner.start[1]) {
             case 'a': return check_keyword(2, "lse", TOKEN_FALSE);
-            case 'o': return check_keyword(2, "r", TOKEN_FOR);
             case 'u': return check_keyword(2, "n", TOKEN_FUN);
             }
         }
