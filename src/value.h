@@ -5,6 +5,7 @@
 
 typedef struct Object Object;
 typedef struct ObjectString ObjectString;
+typedef struct ObjectFunction ObjectFunction;
 
 typedef enum {
     TYPE_CFUNC, // native C function
@@ -36,6 +37,7 @@ typedef struct Value {
 Value make_number(double value);
 Value make_bool(bool value);
 Value make_cfunc(CFuncPtr fn);
+Value make_function(ObjectFunction* fn);
 Value make_null();
 Value make_error(const char* error);
 

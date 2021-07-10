@@ -19,32 +19,33 @@ inline static Value vm_peek(int distance)
     return vm.stack_top[-1 - distance];
 }
 
-inline static uint8_t vm_read_byte()
+inline static uint8_t vm_read_byte(CallFrame* frame)
 {
     // Read next byte and move IP forward by 1
-    return *(vm.ip++);
+    return *(frame->ip++);
 }
 
-inline static uint16_t vm_read_16()
+inline static uint16_t vm_read_16(CallFrame* frame)
 {
     // Read next 2 bytes and move IP forward by 2
-    vm.ip += 2;
-    return vm.ip[-2] << 8 | vm.ip[-1];
+    frame->ip += 2;
+    return frame->ip[-2] << 8 | frame->ip[-1];
 }
 
-inline static Value read_constant()
+inline static Value read_constant(CallFrame* frame)
 {
-    return vm.chunk->constants.values[*(vm.ip++)];
+    return frame->function->chunk.constants.values[*(frame->ip++)];
 }
 
-inline static Value read_constant_16()
+inline static Value read_constant_16(CallFrame* frame)
 {
-    return vm.chunk->constants.values[vm_read_16()];
+    return frame->function->chunk.constants.values[vm_read_16(frame)];
 }
 
 static void vm_reset_stack()
 {
     vm.stack_top = vm.stack;
+    vm.frame_count = 0;
 }
 
 static void vm_push(Value value)
@@ -71,11 +72,14 @@ static void vm_register_fn(const char* name, CFuncPtr fn)
 
 static VmResult vm_report_error(const Value* value)
 {
+    CallFrame* frame = &vm.frames[vm.frame_count - 1];
+
+    const Chunk* chunk = &frame->function->chunk;
     // -1 because ip points to the next iteration byte
-    int offset = (int)(vm.ip - vm.chunk->code - 1);
-    int line = chunk_get_line(vm.chunk, offset);
+    size_t offset = frame->ip - chunk->code - 1;
+    int line = chunk_get_line(chunk, offset);
     fprintf(stderr, "RuntimeError at line %d:\n    ", line);
-    chunk_print_line(vm.chunk, line);
+    chunk_print_line(chunk, line);
     fprintf(stderr, "%s\n", value->as.error);
 
     vm_reset_stack();
@@ -119,12 +123,17 @@ static void vm_update_global_value(const ObjectString* name)
 
 static VmResult vm_run()
 {
+    // Get the top-most callframe
+    CallFrame* frame = &vm.frames[vm.frame_count - 1];
+
 #if ASPIC_DEBUG
     printf("== vm::run ==\n");
 #endif
     for (;;) {
 #if ASPIC_DEBUG
-        instruction_dump(vm.chunk, (int)(vm.ip - vm.chunk->code));
+        instruction_dump(
+            &frame->function->chunk,
+            (int)(frame->ip - frame->function->chunk.code));
         printf("        [");
         for (const Value* slot = vm.stack; slot < vm.stack_top; ++slot) {
             if (slot != vm.stack) {
@@ -135,7 +144,7 @@ static VmResult vm_run()
         printf("]\n");
 #endif
         // Read next byte
-        uint8_t instruction = vm_read_byte();
+        uint8_t instruction = vm_read_byte(frame);
         switch (instruction) {
         case OP_RETURN:
             return VM_OK;
@@ -145,68 +154,68 @@ static VmResult vm_run()
 
         // Jumps
         case OP_JUMP:
-            vm.ip += vm_read_16();
+            frame->ip += vm_read_16(frame);
             break;
         case OP_JUMP_IF_TRUE: {
-            uint16_t offset = vm_read_16();
+            uint16_t offset = vm_read_16(frame);
             if (value_truthy(vm_peek(0))) {
-                vm.ip += offset;
+                frame->ip += offset;
             }
             break;
         }
         case OP_JUMP_IF_FALSE: {
-            uint16_t offset = vm_read_16();
+            uint16_t offset = vm_read_16(frame);
             if (!value_truthy(vm_peek(0))) {
-                vm.ip += offset;
+                frame->ip += offset;
             }
             break;
         }
         case OP_JUMP_BACK:
-            vm.ip -= vm_read_16();
+            frame->ip -= vm_read_16(frame);
             break;
 
         // Global variables
         case OP_DECL_GLOBAL:
-            vm_decl_global((ObjectString*)read_constant().as.object, false);
+            vm_decl_global((ObjectString*)read_constant(frame).as.object, false);
             break;
         case OP_DECL_GLOBAL_CONST:
-            vm_decl_global((ObjectString*)read_constant().as.object, true);
+            vm_decl_global((ObjectString*)read_constant(frame).as.object, true);
             break;
         case OP_GET_GLOBAL:
-            vm_push_global_value((ObjectString*)read_constant().as.object);
+            vm_push_global_value((ObjectString*)read_constant(frame).as.object);
             break;
         case OP_SET_GLOBAL:
-            vm_update_global_value((ObjectString*)read_constant().as.object);
+            vm_update_global_value((ObjectString*)read_constant(frame).as.object);
             break;
         case OP_DECL_GLOBAL_16:
-            vm_decl_global((ObjectString*)read_constant_16().as.object, false);
+            vm_decl_global((ObjectString*)read_constant_16(frame).as.object, false);
             break;
         case OP_DECL_GLOBAL_CONST_16:
-            vm_decl_global((ObjectString*)read_constant_16().as.object, true);
+            vm_decl_global((ObjectString*)read_constant_16(frame).as.object, true);
             break;
         case OP_GET_GLOBAL_16:
-            vm_push_global_value((ObjectString*)read_constant_16().as.object);
+            vm_push_global_value((ObjectString*)read_constant_16(frame).as.object);
             break;
         case OP_SET_GLOBAL_16:
-            vm_update_global_value((ObjectString*)read_constant_16().as.object);
+            vm_update_global_value((ObjectString*)read_constant_16(frame).as.object);
             break;
 
         // Local variables
         case OP_GET_LOCAL:
-            vm_push(vm.stack[vm_read_byte()]);
+            vm_push(frame->slots[vm_read_byte(frame)]);
             break;
         case OP_SET_LOCAL: {
-            uint8_t slot = vm_read_byte();
-            vm.stack[slot] = vm_peek(0);
+            uint8_t slot = vm_read_byte(frame);
+            frame->slots[slot] = vm_peek(0);
             break;
         }
 
         // Literals
         case OP_CONSTANT:
-            vm_push(read_constant());
+            vm_push(read_constant(frame));
             break;
         case OP_CONSTANT_16:
-            vm_push(read_constant_16());
+            vm_push(read_constant_16(frame));
             break;
 
         // Predefined literals
@@ -307,7 +316,7 @@ static VmResult vm_run()
 
         // Function call
         case OP_CALL: {
-            uint8_t argc = vm_read_byte();
+            uint8_t argc = vm_read_byte(frame);
             Value fn = vm.stack_top[-(argc + 1)];
             if (fn.type == TYPE_CFUNC) {
                 Value result = fn.as.cfunc(vm.stack_top - argc, argc);
@@ -370,7 +379,7 @@ void vm_free()
 
 void vm_register_object(Object* object)
 {
-    // Preprend object to the linked list
+    // Preprend object to the linked list for garbage collecting
     object->next = vm.objects_head;
     vm.objects_head = object;
 }
@@ -384,9 +393,6 @@ ObjectString* vm_intern_string(ObjectString* string)
 {
     // Register in string_pool (set) for string interning
     stringset_add(&vm.string_pool, string);
-
-    // Register in objects_head (linked list) for garbage collecting
-    vm_register_object((Object*)string);
     return string;
 }
 
@@ -404,21 +410,22 @@ void vm_debug_globals()
 
 VmResult vm_interpret(const char* source)
 {
-    Chunk chunk;
-    chunk_init(&chunk, source);
-
-    if (!parser_compile(&chunk)) {
-        chunk_free(&chunk);
+    // Get top-level main function
+    ObjectFunction* function = parser_compile(source);
+    if (function == NULL) {
         return VM_COMPILE_ERROR;
     }
 
-    vm.chunk = &chunk;
-    // Make instruction pointer (IP) points to the first byte of bytecode
-    vm.ip = vm.chunk->code;
+    vm_push(make_function(function));
 
-    VmResult result = vm_run();
-    chunk_free(&chunk);
-    return result;
+    CallFrame* frame = &vm.frames[vm.frame_count++];
+    frame->function = function;
+    // Make instruction pointer (IP) points to the first byte of bytecode
+    frame->ip = function->chunk.code;
+    // Set up stack window at the bottom of VM stack
+    frame->slots = vm.stack;
+
+    return vm_run();
 }
 
 Value vm_last_value()

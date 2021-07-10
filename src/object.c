@@ -1,8 +1,68 @@
 #include "object.h"
+#include "utils.h"
 #include "vm.h"
 
 #include <stdio.h>
 #include <string.h>
+
+// Object
+//------------------------------------------------------------------------------
+
+static void* object_new(ObjectType type, size_t size)
+{
+    Object* object = malloc(size);
+    if (object == NULL) {
+        fprintf(stderr, "Cannot allocate object of size %zu", size);
+        exit(1);
+    }
+    object->type = type;
+
+    // Register for GC (linked list vm.objects_head)
+    object->next = NULL;
+    vm_register_object(object);
+    return object;
+}
+
+void object_free(Object* object)
+{
+    switch (object->type) {
+    case OBJECT_FUNCTION: {
+        // Note: no need to destroy function->name, Object pointers are already
+        // tracked by the VM.
+        ObjectFunction* function = (ObjectFunction*)object;
+        // Destroy the chunk
+        chunk_free(&function->chunk);
+
+        free(function);
+        break;
+    }
+    case OBJECT_STRING: {
+        ObjectString* string = (ObjectString*)object;
+        // Destroy the allocated string buffer
+        free(string->chars);
+        string->chars = NULL;
+
+        free(string);
+        break;
+    }
+    }
+}
+
+bool object_equal(const Object* a, const Object* b)
+{
+    if (a->type == b->type) {
+        switch (a->type) {
+        case OBJECT_STRING:
+            return string_equal((const ObjectString*)a, (const ObjectString*)b);
+        case OBJECT_FUNCTION:
+            return a == b;
+        }
+    }
+    return false;
+}
+
+// ObjectString
+//------------------------------------------------------------------------------
 
 static uint32_t hash_string(const char* str, size_t length)
 {
@@ -17,33 +77,6 @@ static uint32_t hash_string(const char* str, size_t length)
     return hash;
 }
 
-// Allocate an empty ObjectString with requested length
-static ObjectString* string_allocate(size_t length)
-{
-    ObjectString* string = malloc(sizeof(ObjectString));
-    if (string == NULL) {
-        fprintf(stderr, "Cannot allocate String object.\n");
-        exit(1);
-    }
-
-    // Shared object attributes
-    string->object.type = OBJECT_STRING;
-    string->object.next = NULL;
-
-    // String attributes
-    string->chars = malloc(length + 1);
-    if (string->chars == NULL) {
-        fprintf(stderr, "Cannot allocate string of length %ld\n", length);
-        exit(1);
-    }
-
-    string->chars[length] = '\0';
-    string->length = length;
-
-    return string;
-}
-
-// ctor: handle string interning
 const ObjectString* string_new(const char* chars, size_t length)
 {
     uint32_t hash = hash_string(chars, length);
@@ -54,57 +87,61 @@ const ObjectString* string_new(const char* chars, size_t length)
         return interned;
     }
 
-    ObjectString* string = string_allocate(length);
+    // Allocate new string object and copy string
+    ObjectString* string = object_new(OBJECT_STRING, sizeof(ObjectString));
+    string->chars = alloc_string(length);
     memcpy(string->chars, chars, length);
-
+    string->length = length;
     string->hash = hash;
 
     return vm_intern_string(string);
 }
 
-// ctor: handle string interning
-const ObjectString* string_concat(const ObjectString* a, const ObjectString* b)
+static const ObjectString* string_ctor(char* chars, size_t length, uint32_t hash)
 {
-    size_t length = a->length + b->length;
-    ObjectString* string = string_allocate(length);
-
-    memcpy(string->chars, a->chars, a->length);
-    memcpy(string->chars + a->length, b->chars, b->length);
-
-    string->hash = hash_string(string->chars, length);
-
     // Check if string was already interned in the VM
-    const ObjectString* interned = vm_find_string(string->chars, length, string->hash);
+    const ObjectString* interned = vm_find_string(chars, length, hash);
     if (interned) {
-        // Destroy object and return interned instead
-        object_free((Object*)string);
+        // Destroy buffer and return interned string instead
+        free(chars);
         return interned;
     }
 
+    // Allocate new ObjectString and set attributes
+    ObjectString* string = object_new(OBJECT_STRING, sizeof(ObjectString));
+    string->chars = chars;
+    string->length = length;
+    string->hash = hash;
+
+    // Ensure string is interned by the VM
     return vm_intern_string(string);
 }
 
-// ctor: handle string interning
+const ObjectString* string_concat(const ObjectString* a, const ObjectString* b)
+{
+    size_t length = a->length + b->length;
+
+    // Concat a + b into buffer
+    char* buffer = alloc_string(length);
+    memcpy(buffer, a->chars, a->length);
+    memcpy(buffer + a->length, b->chars, b->length);
+    uint32_t hash = hash_string(buffer, length);
+
+    return string_ctor(buffer, length, hash);
+}
+
 const ObjectString* string_multiply(const ObjectString* source, size_t n)
 {
     size_t length = source->length * n;
-    ObjectString* string = string_allocate(length);
 
+    // Build buffer with new source * n
+    char* buffer = alloc_string(length);
     for (size_t i = 0; i < n; ++i) {
-        memcpy(string->chars + i * source->length, source->chars, source->length);
+        memcpy(buffer + i * source->length, source->chars, source->length);
     }
+    uint32_t hash = hash_string(buffer, length);
 
-    string->hash = hash_string(string->chars, length);
-
-    // Check if string was already interned in the VM
-    const ObjectString* interned = vm_find_string(string->chars, length, string->hash);
-    if (interned) {
-        // Destroy object and return interned instead
-        object_free((Object*)string);
-        return interned;
-    }
-
-    return vm_intern_string(string);
+    return string_ctor(buffer, length, hash);
 }
 
 bool string_equal(const ObjectString* a, const ObjectString* b)
@@ -119,36 +156,14 @@ int string_compare(const ObjectString* a, const ObjectString* b)
     return strcmp(a->chars, b->chars);
 }
 
-void object_free(Object* object)
-{
-    switch (object->type) {
-    case OBJECT_STRING: {
-        ObjectString* string = (ObjectString*)object;
-        // Destroy the allocated string buffer
-        free(string->chars);
-        string->chars = NULL;
-        // Destroy the object itself
-        free(string);
-        break;
-    }
-    }
-}
+// ObjectFunction
+//------------------------------------------------------------------------------
 
-void object_print(const Object* object)
+ObjectFunction* function_new(const char* source)
 {
-    switch (object->type) {
-    case OBJECT_STRING:
-        printf("%s", ((const ObjectString*)object)->chars);
-        break;
-    }
-}
-
-bool object_equal(const Object* a, const Object* b)
-{
-    if (a->type == b->type) {
-        if (a->type == OBJECT_STRING) {
-            return string_equal((const ObjectString*)a, (const ObjectString*)b);
-        }
-    }
-    return false;
+    ObjectFunction* function = object_new(OBJECT_FUNCTION, sizeof(ObjectFunction));
+    function->arity = 0;
+    function->name = NULL;
+    chunk_init(&function->chunk, source);
+    return function;
 }

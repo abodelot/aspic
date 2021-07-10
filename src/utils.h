@@ -10,6 +10,12 @@
 void* xrealloc(void* pointer, size_t object_size, size_t n);
 
 /**
+ * Allocate buffer of size length+1 with last char set at \0.
+ * Exit program immediately if allocation failed.
+ */
+char* alloc_string(size_t length);
+
+/**
  * Dynamically allocate and format a string.
  * @return allocated buffer.
  */

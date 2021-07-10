@@ -1,8 +1,8 @@
 #ifndef ASPIC_PARSER_H
 #define ASPIC_PARSER_H
 
-#include "chunk.h"
+#include "object.h"
 
-bool parser_compile(Chunk* chunk);
+ObjectFunction* parser_compile(const char* source);
 
 #endif

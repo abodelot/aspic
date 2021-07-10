@@ -127,7 +127,15 @@ typedef struct {
     bool read_only;
 } Local;
 
+typedef enum {
+    CHUNK_FUNCTION,
+    CHUNK_MAIN
+} ChunkType;
+
 typedef struct {
+    ObjectFunction* function;
+    ChunkType type;
+
     Local locals[UINT8_MAX];
     int local_count;
     int scope_depth;
@@ -139,7 +147,7 @@ Compiler* g_compiler;
 
 static Chunk* current_chunk()
 {
-    return g_current_chunk;
+    return &g_compiler->function->chunk;
 }
 
 static void error_at(const Token* token, const char* message)
@@ -157,7 +165,7 @@ static void error_at(const Token* token, const char* message)
     if (token->type == TOKEN_EOF) {
         fprintf(stderr, " at EOF\n");
     } else if (token->type == TOKEN_ERROR) {
-        // Nothing
+        fprintf(stderr, "\n");
     } else {
         fprintf(stderr, " at '%.*s'\n", token->length, token->start);
     }
@@ -267,14 +275,16 @@ static int emit_constant(Value constant)
     return constant_index;
 }
 
-static void end_compiler()
+static ObjectFunction* end_compiler()
 {
     emit_return();
+    ObjectFunction* function = g_compiler->function;
 #if ASPIC_DEBUG
     if (!parser.errored) {
-        chunk_dump(current_chunk(), "chunk");
+        chunk_dump(current_chunk(), function->name ? function->name->chars : "__main__");
     }
 #endif
+    return function;
 }
 
 static void begin_scope()
@@ -759,23 +769,33 @@ static void rule_variable(bool assignable)
     }
 }
 
-static void compiler_init(Compiler* compiler)
+static void compiler_init(Compiler* compiler, ChunkType type, const char* source)
 {
+    compiler->function = NULL;
+    compiler->type = type;
+
     compiler->local_count = 0;
     compiler->scope_depth = 0;
+    compiler->function = function_new(source);
     g_compiler = compiler;
+
+    // Claim an empty Local slot with empty name for internal use
+    // Users cannot declare locals named "" so it won't collide
+    Local* local = &g_compiler->locals[g_compiler->local_count++];
+    local->depth = 0;
+    local->name.start = "";
+    local->name.length = 0;
 }
 
 // Parser entry point
-bool parser_compile(Chunk* chunk)
+ObjectFunction* parser_compile(const char* source)
 {
     parser.errored = false;
     parser.panic_mode = false;
 
-    scanner_init(chunk->source);
+    scanner_init(source);
     Compiler compiler;
-    compiler_init(&compiler);
-    g_current_chunk = chunk;
+    compiler_init(&compiler, CHUNK_MAIN, source);
 
     advance();
 
@@ -783,6 +803,6 @@ bool parser_compile(Chunk* chunk)
         declaration();
     }
 
-    end_compiler();
-    return !parser.errored;
+    ObjectFunction* function = end_compiler();
+    return parser.errored ? NULL : function;
 }

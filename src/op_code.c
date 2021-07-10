@@ -88,7 +88,7 @@ Value op_not(Value value)
     case TYPE_NULL:
         return make_bool(true);
     default:
-        return unary_op_error(OP_NOT, value);
+        return make_bool(false);
     }
 }
 

@@ -2,9 +2,11 @@
 #define ASPIC_OBJECT_H
 
 #include "value.h"
+#include "chunk.h"
 
 typedef enum  {
-    OBJECT_STRING
+    OBJECT_STRING,  // Strings of chars
+    OBJECT_FUNCTION // User-defined functions
 } ObjectType;
 
 struct Object {
@@ -12,6 +14,21 @@ struct Object {
     // Each object is a node of the linked list of all allocated objects
     struct Object* next;
 };
+
+typedef struct Object Object;
+
+/**
+ * Object dtor
+ */
+void object_free(Object* object);
+
+/**
+ * Compare two objects for equality
+ */
+bool object_equal(const Object* a, const Object* b);
+
+// ObjectString
+//------------------------------------------------------------------------------
 
 // First bytes of ObjectString is Object, so an ObjectString* pointer can
 // safely be casted to an Object* pointer.
@@ -40,19 +57,16 @@ bool string_equal(const ObjectString* a, const ObjectString* b);
  */
 int string_compare(const ObjectString* a, const ObjectString* b);
 
-/**
- * Object dtor
- */
-void object_free(Object* object);
+// ObjectFunction
+//------------------------------------------------------------------------------
 
-/**
- * Print object to stdout
- */
-void object_print(const Object* object);
+struct ObjectFunction {
+    Object object;
+    int arity;
+    Chunk chunk;
+    const ObjectString* name;
+};
 
-/**
- * Compare two objects for equality
- */
-bool object_equal(const Object* a, const Object* b);
+ObjectFunction* function_new(const char* source);
 
 #endif

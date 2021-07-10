@@ -14,6 +14,14 @@ assert(false == false);
 assert(!null);
 assert(!false);
 
+# Not
+assert(!null == true);
+assert(!false == true);
+assert(!0 == false);
+assert(!1 == false);
+assert(!"" == false);
+assert(!"!" == false);
+
 let var = true;
 assert(var);
 var = false;

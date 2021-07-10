@@ -6,15 +6,29 @@
 #include "hashtable.h"
 #include "stringset.h"
 
-#define VM_STACK_MAX 256
+#define VM_FRAMES_MAX 64
+#define VM_STACK_MAX (VM_FRAMES_MAX * UINT8_MAX)
+
+/**
+ * CallFrame represents an ongoing function call
+ */
+typedef struct {
+    // The function being called
+    ObjectFunction* function;
+    // Points into the vm.stack at the first slot the function can use
+    Value* slots;
+    // Instruction pointer: points to the bytecode array (chunk.code)
+    uint8_t* ip;
+} CallFrame;
 
 typedef struct {
-    Chunk* chunk;
-    // Instruction pointer: points to the bytecode array
-    uint8_t* ip;
-
+    // Main stack
     Value stack[VM_STACK_MAX];
     Value* stack_top;
+
+    // CallFrame stack (ongoing function calls)
+    CallFrame frames[VM_FRAMES_MAX];
+    int frame_count;
 
     // Linked list of allocated objects
     Object* objects_head;

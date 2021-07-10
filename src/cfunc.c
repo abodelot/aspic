@@ -94,6 +94,8 @@ Value aspic_str(Value* argv, int argc)
         return make_string_from_cstr("");
     case TYPE_OBJECT:
         switch (argv[0].as.object->type) {
+        case OBJECT_FUNCTION:
+            return make_string(((ObjectFunction*)argv[0].as.object)->name);
         case OBJECT_STRING:
             return argv[0];
         }

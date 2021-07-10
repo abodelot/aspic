@@ -7,18 +7,27 @@ void* xrealloc(void* pointer, size_t object_size, size_t n)
 {
     size_t new_size = object_size * n;
     if (new_size == 0) {
-        perror("[xreallaoc]");
-        fprintf(stderr, "cannot allocate size of 0\n");
+        fprintf(stderr, "FATAL: cannot allocate size of 0\n");
         exit(1);
     }
 
     void* result = realloc(pointer, new_size);
     if (result == NULL) {
-        perror("[xrealloc]");
-        fprintf(stderr, "cannot allocate size of %zu\n", new_size);
+        fprintf(stderr, "FATAL: cannot allocate size of %zu\n", new_size);
         exit(1);
     }
     return result;
+}
+
+char* alloc_string(size_t length)
+{
+    char* buffer = malloc(length + 1);
+    if (buffer == NULL) {
+        fprintf(stderr, "FATAL: cannot allocate string of length %ld\n", length);
+        exit(1);
+    }
+    buffer[length] = '\0';
+    return buffer;
 }
 
 char* formatstr(const char* format, ...)

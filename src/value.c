@@ -1,6 +1,7 @@
 #include "value.h"
 #include "object.h"
 #include "shared.h"
+#include "utils.h"
 
 #include <stdio.h>
 #include <string.h>
@@ -51,6 +52,11 @@ Value make_string_from_cstr(const char* str)
     };
 }
 
+Value make_function(ObjectFunction* fn)
+{
+    return (Value) { .type = TYPE_OBJECT, .as.object = (Object*)fn };
+}
+
 void value_repr(Value value)
 {
     switch (value.type) {
@@ -70,8 +76,19 @@ void value_repr(Value value)
         printf("[RuntimeError] %s", value.as.error);
         break;
     case TYPE_OBJECT:
-        if (value.as.object->type == OBJECT_STRING) {
+        switch (value.as.object->type) {
+        case OBJECT_FUNCTION: {
+            const ObjectString* name = ((ObjectFunction*)value.as.object)->name;
+            if (name != NULL) {
+                printf("<function %s>", name->chars);
+            } else {
+                printf("__main__");
+            }
+            break;
+        }
+        case OBJECT_STRING:
             printf("\"%s\"", ((ObjectString*)value.as.object)->chars);
+            break;
         }
         break;
     }
@@ -92,6 +109,8 @@ const char* value_type(Value value)
         return "number";
     case TYPE_OBJECT:
         switch (value.as.object->type) {
+        case OBJECT_FUNCTION:
+            return "function";
         case OBJECT_STRING:
             return "string";
         }
