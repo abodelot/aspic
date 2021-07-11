@@ -25,7 +25,7 @@ typedef enum {
     PREC_TERM,       // + -
     PREC_FACTOR,     // * / %
     PREC_UNARY,      // ! -
-    PREC_CALL,       // . ()
+    PREC_CALL,       // . () []
     PREC_PRIMARY
 } Precedence;
 
@@ -44,6 +44,7 @@ static void rule_number(bool);
 static void rule_string(bool);
 static void rule_literal(bool);
 static void rule_fn_call(bool);
+static void rule_subscript(bool);
 static void rule_variable(bool);
 static void rule_and(bool);
 static void rule_or(bool);
@@ -55,6 +56,8 @@ ParseRule rules[] = {
     [TOKEN_RIGHT_PAREN] = { NULL, NULL, PREC_NONE },
     [TOKEN_LEFT_BRACE] = { NULL, NULL, PREC_NONE },
     [TOKEN_RIGHT_BRACE] = { NULL, NULL, PREC_NONE },
+    [TOKEN_LEFT_BRACKET] = { NULL, rule_subscript, PREC_CALL },
+    [TOKEN_RIGHT_BRACKET] = { NULL, NULL, PREC_NONE },
     [TOKEN_COMMA] = { NULL, NULL, PREC_NONE },
     [TOKEN_DOT] = { NULL, NULL, PREC_NONE },
     [TOKEN_MINUS] = { rule_unary_op, rule_binary_op, PREC_TERM },
@@ -664,6 +667,19 @@ static void rule_fn_call(bool _assignable)
     uint8_t arg_count = argument_list();
     emit_byte(OP_CALL);
     emit_byte(arg_count);
+}
+
+static void rule_subscript(bool assignable)
+{
+    expression();
+    consume(TOKEN_RIGHT_BRACKET, "Expected ']'");
+    // Check if [] is followed by an assignment
+    if (assignable && match(TOKEN_EQUAL)) {
+        expression();
+        emit_byte(OP_SUBSCRIPT_SET);
+    } else {
+        emit_byte(OP_SUBSCRIPT_GET);
+    }
 }
 
 /**

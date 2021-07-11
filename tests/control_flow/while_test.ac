@@ -45,3 +45,12 @@ while (i > 0) {
     i = i - 1;
 }
 assert(string == "foo!!!!foo!!!!");
+
+const word = "Hello, world!";
+let reverse = "";
+i = 0;
+while (i < len(word)) {
+    i = i + 1;
+    reverse = reverse + word[-i];
+}
+assert(reverse == "!dlrow ,olleH");

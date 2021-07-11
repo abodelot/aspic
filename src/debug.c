@@ -137,7 +137,12 @@ int instruction_dump(const Chunk* chunk, int offset)
     case OP_LESS_EQUAL:
         return instruction_noarg(desc, offset);
 
-    // Call operator
+    // Subscript operator []
+    case OP_SUBSCRIPT_GET:
+    case OP_SUBSCRIPT_SET:
+        return instruction_noarg(desc, offset);
+
+    // Call operator ()
     case OP_CALL:
         return instruction_byte(desc, chunk, offset);
 

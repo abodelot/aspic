@@ -48,6 +48,8 @@ const char* op2str(OpCode opcode)
         STROP(OP_GREATER_EQUAL)
         STROP(OP_LESS)
         STROP(OP_LESS_EQUAL)
+        STROP(OP_SUBSCRIPT_GET)
+        STROP(OP_SUBSCRIPT_SET)
         STROP(OP_CALL)
     }
     return NULL;
@@ -213,4 +215,39 @@ Value op_greater_equal(Value b, Value a)
         }
     }
     return comparison_error(a, b);
+}
+
+Value op_subscript_get(Value collection, Value index)
+{
+    switch (collection.type) {
+    case TYPE_OBJECT:
+        if (collection.as.object->type == OBJECT_STRING && index.type == TYPE_NUMBER) {
+            const ObjectString* string = (const ObjectString*)collection.as.object;
+            int i = index.as.number;
+            if (i >= 0 && i < string->length) {
+                // Positive index
+                return make_string_from_buffer(string->chars + i, 1);
+            } else if (i >= -string->length && i < 0) {
+                // Negative index
+                return make_string_from_buffer(string->chars + string->length + i, 1);
+            }
+            // Index out of range
+            return make_error(formatstr(
+                "'%s' index %d is out of range [%d:%d]",
+                value_type(collection), i, -string->length, string->length - 1));
+        }
+        break;
+    default:
+        break;
+    }
+    return binary_op_error(OP_SUBSCRIPT_GET, collection, index);
+}
+
+Value op_subscript_set(Value collection, Value index, Value value)
+{
+    (void)index;
+    (void)value;
+    return make_error(formatstr(
+        "'%s' does not support item assignment",
+        value_type(collection)));
 }

@@ -61,41 +61,51 @@ typedef enum {
     OP_LESS,
     OP_LESS_EQUAL,
 
-    // Function call
+    // Subscript operator []
+    OP_SUBSCRIPT_GET,
+    OP_SUBSCRIPT_SET,
+
+    // Function call ()
     OP_CALL,
 } OpCode;
 
 // Convert enum to string, for debug purpose
 const char* op2str(OpCode);
 
-// OP_NOT
+// OP_NOT: !value
 Value op_not(Value value);
 
-// OP_POSITIVE
+// OP_POSITIVE: +value
 Value op_positive(Value value);
 
-// OP_NEGATIVE
+// OP_NEGATIVE: -value
 Value op_negative(Value value);
 
-// OP_ADD
+// OP_ADD: a + b
 Value op_add(Value b, Value a);
 
-// OP_SUBTRACT
+// OP_SUBTRACT: a - b
 Value op_subtract(Value b, Value a);
 
-// OP_MULTIPLY
+// OP_MULTIPLY: a * b
 Value op_multiply(Value b, Value a);
 
-// OP_DIVIDE
+// OP_DIVIDE: a / b
 Value op_divide(Value b, Value a);
 
-// OP_MODULO
+// OP_MODULO: a % b
 Value op_modulo(Value b, Value a);
 
-// OP_GREATER
+// OP_GREATER: a > b
 Value op_greater(Value b, Value a);
 
-// OP_GREATER_EQUAL
+// OP_GREATER_EQUAL: a >= b
 Value op_greater_equal(Value b, Value a);
+
+// OP_SUBSCRIPT_GET: collection[index]
+Value op_subscript_get(Value collection, Value index);
+
+// OP_SUBSCRIPT_SET: collection[index] = value
+Value op_subscript_set(Value collection, Value index, Value value);
 
 #endif

@@ -38,3 +38,17 @@ assert(fruit2 == "orange");
 fruit1 = "kiwi";
 assert(fruit1 != fruit2);
 assert(fruit2 == "orange");
+
+# Index []
+assert(fruit1[0] == "k");
+assert(fruit1[1] == "i");
+assert(fruit1[1] == fruit1[3]);
+assert(fruit1[len(fruit1) - 1] == "i");
+assert(fruit1[10 * 4 - 72 / 2 - 1 - 1] == "w");
+assert(str(1234)[0] * 4 == "1111");
+
+# Negative index []
+assert(fruit2[-1] == "e");
+assert(fruit2[-2] == "g");
+assert(fruit2[-len(fruit2)] == "o");
+assert(fruit2[-0] == "o");

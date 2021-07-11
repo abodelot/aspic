@@ -292,6 +292,19 @@ static VmResult vm_run()
             break;
         }
 
+        // Subscript operator
+        case OP_SUBSCRIPT_GET: {
+            Value index = vm_pop();
+            vm_push(op_subscript_get(vm_pop(), index));
+            break;
+        }
+        case OP_SUBSCRIPT_SET: {
+            Value value = vm_pop();
+            Value index = vm_pop();
+            vm_push(op_subscript_set(vm_pop(), index, value));
+            break;
+        }
+
         // Function call
         case OP_CALL: {
             uint8_t argc = vm_read_byte();

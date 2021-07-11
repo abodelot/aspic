@@ -41,3 +41,14 @@ if (a = false) {
     a = "else branch";
 }
 assert(a == "else branch");
+
+const text = "Lorem ipsum dolor sit amet";
+let i = 0;
+let count = 0;
+while (i < len(text)) {
+    if (text[i] == "m") {
+        count = count + 1;
+    }
+    i = i + 1;
+}
+assert(count == 3);
