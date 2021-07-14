@@ -2,6 +2,7 @@
 #define ASPIC_UTILS_H
 
 #include "shared.h"
+#include <stdio.h>
 
 /**
  * (Re)allocate n * object_size. Use realloc.
@@ -20,5 +21,10 @@ char* alloc_string(size_t length);
  * @return allocated buffer.
  */
 char* formatstr(const char* format, ...);
+
+/**
+ * Print a trimmed line from buffer
+ */
+void print_line(FILE* stream, const char* buffer, int line);
 
 #endif

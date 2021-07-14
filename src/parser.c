@@ -3,9 +3,10 @@
 #include "debug.h"
 #include "op_code.h"
 #include "scanner.h"
+#include "utils.h"
 
+#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct {
@@ -13,6 +14,7 @@ typedef struct {
     Token previous;
     bool errored;
     bool panic_mode;
+    const char* source;
 } Parser;
 
 typedef enum {
@@ -86,9 +88,9 @@ ParseRule rules[] = {
     // Keywords
     [TOKEN_CLASS] = { NULL, NULL, PREC_NONE },
     [TOKEN_CONST] = { NULL, NULL, PREC_NONE },
+    [TOKEN_DEF] = { NULL, NULL, PREC_NONE },
     [TOKEN_ELSE] = { NULL, NULL, PREC_NONE },
     [TOKEN_FALSE] = { rule_literal, NULL, PREC_NONE },
-    [TOKEN_FUN] = { NULL, NULL, PREC_NONE },
     [TOKEN_IF] = { NULL, NULL, PREC_NONE },
     [TOKEN_LET] = { NULL, NULL, PREC_NONE },
     [TOKEN_NULL] = { rule_literal, NULL, PREC_NONE },
@@ -132,7 +134,10 @@ typedef enum {
     CHUNK_MAIN
 } ChunkType;
 
-typedef struct {
+typedef struct Compiler {
+    // Keep track of the previous current compiler instance
+    struct Compiler* previous;
+
     ObjectFunction* function;
     ChunkType type;
 
@@ -142,8 +147,7 @@ typedef struct {
 } Compiler;
 
 Parser parser;
-Chunk* g_current_chunk;
-Compiler* g_compiler;
+Compiler* g_compiler = NULL;
 
 static Chunk* current_chunk()
 {
@@ -159,7 +163,7 @@ static void error_at(const Token* token, const char* message)
     }
     parser.panic_mode = true;
     fprintf(stderr, "SyntaxError at line %d:\n    ", token->line);
-    chunk_print_line(current_chunk(), token->line);
+    print_line(stderr, parser.source, token->line);
 
     fprintf(stderr, "%s", message);
     if (token->type == TOKEN_EOF) {
@@ -259,6 +263,10 @@ static void emit_byte(uint8_t byte)
 
 static void emit_return()
 {
+    if (g_compiler->type != CHUNK_MAIN) {
+        // Implicit NULL return value for functions
+        emit_byte(OP_NULL);
+    }
     emit_byte(OP_RETURN);
 }
 
@@ -279,11 +287,13 @@ static ObjectFunction* end_compiler()
 {
     emit_return();
     ObjectFunction* function = g_compiler->function;
-#if ASPIC_DEBUG
+#ifdef ASPIC_DEBUG
     if (!parser.errored) {
         chunk_dump(current_chunk(), function->name ? function->name->chars : "__main__");
     }
 #endif
+    // Restore the previous instance as the current one
+    g_compiler = g_compiler->previous;
     return function;
 }
 
@@ -318,7 +328,7 @@ static void synchronize()
         switch (parser.current.type) {
         case TOKEN_CLASS:
         case TOKEN_CONST:
-        case TOKEN_FUN:
+        case TOKEN_DEF:
         case TOKEN_IF:
         case TOKEN_LET:
         case TOKEN_WHILE:
@@ -385,13 +395,29 @@ static int parse_variable(const char* error_message)
         add_local_variable(name);
         // When in a local scope, no need to store the variable name in the
         // chunk.constants array. Return a dummy index instead.
-        return 0;
+        return -1;
     }
 
     // Register the identifer as a constant value in the chunk
     Value identifier = make_string_from_buffer(parser.previous.start, parser.previous.length);
     Chunk* chunk = current_chunk();
     return chunk_register_constant(chunk, identifier);
+}
+
+static void declare_global(int global_index, bool read_only)
+{
+    // Declare global variable
+    if (global_index <= UINT8_MAX) {
+        emit_byte(read_only ? OP_DECL_GLOBAL_CONST : OP_DECL_GLOBAL);
+        emit_byte(global_index);
+    } else if (global_index <= UINT16_MAX) {
+        emit_byte(read_only ? OP_DECL_GLOBAL_CONST_16 : OP_DECL_GLOBAL_16);
+        // Convert global index to a 2-bytes integer
+        emit_byte((global_index >> 8) & 0xff);
+        emit_byte(global_index & 0xff);
+    } else {
+        error("Cannot declare over UINT16_MAX constants");
+    }
 }
 
 static void var_declaration(bool read_only)
@@ -407,24 +433,103 @@ static void var_declaration(bool read_only)
     consume(TOKEN_SEMICOLON, "Expected ';' after variable declaration");
 
     if (g_compiler->scope_depth > 0) {
+        assert(global_index == -1);
         // Initialize local variable
         Local* last = &g_compiler->locals[g_compiler->local_count - 1];
         last->depth = g_compiler->scope_depth;
         last->read_only = read_only;
-        return;
+    } else {
+        assert(global_index >= 0);
+        declare_global(global_index, read_only);
+    }
+}
+
+static void compiler_init(Compiler* compiler, ChunkType type)
+{
+    compiler->previous = g_compiler;
+    compiler->function = NULL;
+    compiler->type = type;
+
+    compiler->local_count = 0;
+    compiler->scope_depth = 0;
+    compiler->function = function_new();
+    g_compiler = compiler;
+
+    // compiler_init is called right after parsing the function name
+    // Extract the name from the previous token
+    if (type != CHUNK_MAIN) {
+        compiler->function->name = string_new(parser.previous.start,
+            parser.previous.length);
     }
 
-    // Declare global variable
-    if (global_index <= UINT8_MAX) {
-        emit_byte(read_only ? OP_DECL_GLOBAL_CONST : OP_DECL_GLOBAL);
-        emit_byte(global_index);
-    } else if (global_index <= UINT16_MAX) {
-        emit_byte(read_only ? OP_DECL_GLOBAL_CONST_16 : OP_DECL_GLOBAL_16);
-        // Convert global index to a 2-bytes integer
-        emit_byte((global_index >> 8) & 0xff);
-        emit_byte(global_index & 0xff);
-    } else {
-        error("Cannot declare over UINT16_MAX constants");
+    // Claim an empty Local slot with empty name for internal use
+    // Users cannot declare locals named "" so it won't collide
+    Local* local = &g_compiler->locals[g_compiler->local_count++];
+    local->depth = 0;
+    local->name.start = "";
+    local->name.length = 0;
+}
+
+static void statement();
+static void block();
+
+/**
+ * Parse the function arguments and body
+ */
+static void parse_function(ChunkType type)
+{
+    Compiler compiler;
+    compiler_init(&compiler, type);
+    begin_scope();
+
+    consume(TOKEN_LEFT_PAREN, "Expected '(' after function name");
+
+    if (parser.current.type != TOKEN_RIGHT_PAREN) {
+        do {
+            g_compiler->function->arity++;
+            // Arity of OP_CALL is stored on a single byte
+            if (g_compiler->function->arity > UINT8_MAX) {
+                error_at_current("Function cannot have more than 255 parameters.");
+            }
+            int constant = parse_variable("Expected parameter name");
+            // Function arguments are local variables
+            assert(constant == -1);
+            assert(g_compiler->scope_depth > 0);
+
+            // Mark initialized
+            Local* last = &g_compiler->locals[g_compiler->local_count - 1];
+            last->depth = g_compiler->scope_depth;
+
+            // Function arguments can be reassigned
+            last->read_only = false;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_PAREN, "Expected ')' after parameters");
+    consume(TOKEN_LEFT_BRACE, "Expected '{' before function body");
+    block();
+
+    ObjectFunction* function = end_compiler();
+    emit_constant(make_function(function));
+}
+
+static void function_declaration()
+{
+    // Function declaration follows the same logic than variables: globals
+    // when at top-level, locals when inside a scope.
+    uint8_t global = parse_variable("Expected function name");
+
+    // If local
+    if (g_compiler->scope_depth > 0) {
+        // Mark as initialized
+        Local* last = &g_compiler->locals[g_compiler->local_count - 1];
+        last->depth = g_compiler->scope_depth;
+        // Allow function name to be rebinded
+        last->read_only = false;
+    }
+    parse_function(CHUNK_FUNCTION);
+
+    if (g_compiler->scope_depth == 0) {
+        declare_global(global, false);
     }
 }
 
@@ -450,8 +555,6 @@ static int emit_jump(uint8_t instruction)
     emit_byte(0xff);
     return current_chunk()->count - 2;
 }
-
-static void statement();
 
 static void if_statement()
 {
@@ -507,12 +610,29 @@ static void while_statement()
     emit_byte(OP_POP);
 }
 
+static void return_statement()
+{
+    if (g_compiler->type == CHUNK_MAIN) {
+        error("Cannot return from main script");
+    }
+
+    if (match(TOKEN_SEMICOLON)) {
+        emit_return();
+    } else {
+        expression();
+        consume(TOKEN_SEMICOLON, "Expected ';' after return expresson");
+        emit_byte(OP_RETURN);
+    }
+}
+
 static void declaration()
 {
     if (match(TOKEN_LET)) {
         var_declaration(false);
     } else if (match(TOKEN_CONST)) {
         var_declaration(true);
+    } else if (match(TOKEN_DEF)) {
+        function_declaration();
     } else {
         statement();
     }
@@ -543,6 +663,8 @@ static void statement()
         if_statement();
     } else if (match(TOKEN_WHILE)) {
         while_statement();
+    } else if (match(TOKEN_RETURN)) {
+        return_statement();
     } else {
         expression_statement();
     }
@@ -643,6 +765,10 @@ static uint8_t argument_list()
     if (parser.current.type != TOKEN_RIGHT_PAREN) {
         do {
             expression();
+            // Arity is stored on a single byte
+            if (arg_count == UINT8_MAX) {
+                error("Cannot handle more than 255 arguments");
+            }
             ++arg_count;
         } while (match(TOKEN_COMMA));
     }
@@ -769,33 +895,16 @@ static void rule_variable(bool assignable)
     }
 }
 
-static void compiler_init(Compiler* compiler, ChunkType type, const char* source)
-{
-    compiler->function = NULL;
-    compiler->type = type;
-
-    compiler->local_count = 0;
-    compiler->scope_depth = 0;
-    compiler->function = function_new(source);
-    g_compiler = compiler;
-
-    // Claim an empty Local slot with empty name for internal use
-    // Users cannot declare locals named "" so it won't collide
-    Local* local = &g_compiler->locals[g_compiler->local_count++];
-    local->depth = 0;
-    local->name.start = "";
-    local->name.length = 0;
-}
-
 // Parser entry point
 ObjectFunction* parser_compile(const char* source)
 {
     parser.errored = false;
     parser.panic_mode = false;
+    parser.source = source;
 
     scanner_init(source);
     Compiler compiler;
-    compiler_init(&compiler, CHUNK_MAIN, source);
+    compiler_init(&compiler, CHUNK_MAIN);
 
     advance();
 

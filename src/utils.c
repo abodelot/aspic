@@ -2,6 +2,7 @@
 
 #include <stdarg.h> // va_list
 #include <stdio.h>
+#include <string.h> // strchr
 
 void* xrealloc(void* pointer, size_t object_size, size_t n)
 {
@@ -48,4 +49,27 @@ char* formatstr(const char* format, ...)
     va_end(args);
 
     return buffer;
+}
+
+void print_line(FILE* stream, const char* buffer, int line)
+{
+    // Find the first \n
+    const char* start = buffer;
+    for (int i = 1; i < line; ++i) {
+        start = strchr(start, '\n') + 1;
+    }
+
+    // Consume whitespaces
+    while (*start == ' ') {
+        ++start;
+    }
+
+    // Fint the second \n
+    const char* stop = strchr(start, '\n');
+    if (stop != NULL) {
+        // Print everything in between
+        fprintf(stream, "%.*s\n", (int)(stop - start), start);
+    } else {
+        fprintf(stream, "%s\n", start);
+    }
 }

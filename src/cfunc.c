@@ -81,17 +81,21 @@ Value aspic_str(Value* argv, int argc)
         snprintf(buffer, sizeof buffer, "<cfunc %lx>", (size_t)argv[0].as.cfunc);
         return make_string_from_cstr(buffer);
     }
+
     case TYPE_BOOL: {
         const char* cstr = argv[0].as.boolean ? "true" : "false";
         return make_string_from_cstr(cstr);
     }
+
     case TYPE_NUMBER: {
         char buffer[64];
         snprintf(buffer, sizeof buffer, "%g", argv[0].as.number);
         return make_string_from_cstr(buffer);
     }
+
     case TYPE_NULL:
         return make_string_from_cstr("");
+
     case TYPE_OBJECT:
         switch (argv[0].as.object->type) {
         case OBJECT_FUNCTION:
@@ -100,8 +104,9 @@ Value aspic_str(Value* argv, int argc)
             return argv[0];
         }
         break;
-    default:
-        break;
+
+    case TYPE_ERROR:
+        return make_string_from_cstr(argv[0].as.error);
     }
     return make_null();
 }

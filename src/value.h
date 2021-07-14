@@ -16,7 +16,7 @@ typedef enum {
     TYPE_OBJECT,
 } ValueType;
 
-typedef struct Value (*CFuncPtr)(struct Value* stack, int args);
+typedef struct Value (*CFuncPtr)(struct Value* argv, int args);
 
 typedef union {
     double number;     // TYPE_CFUNC

@@ -30,11 +30,10 @@ static void int_array_push(IntArray* array, int value)
     array->values[array->count++] = value;
 }
 
-void chunk_init(Chunk* chunk, const char* source)
+void chunk_init(Chunk* chunk)
 {
     chunk->count = chunk->capacity = 0;
     chunk->code = NULL;
-    chunk->source = source;
 
     value_array_init(&chunk->constants);
     int_array_init(&chunk->lines);
@@ -124,22 +123,4 @@ int chunk_get_line(const Chunk* chunk, size_t offset)
         }
     }
     return 0;
-}
-
-void chunk_print_line(const Chunk* chunk, int line)
-{
-    // Find the first \n
-    const char* start = chunk->source;
-    for (int i = 1; i < line; ++i) {
-        start = strchr(start, '\n') + 1;
-    }
-
-    // Fint the second \n
-    const char* stop = strchr(start, '\n');
-    if (stop != NULL) {
-        // Print everything in between
-        fprintf(stderr, "%.*s\n", (int)(stop - start), start);
-    } else {
-        fprintf(stderr, "%s\n", start);
-    }
 }

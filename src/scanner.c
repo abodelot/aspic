@@ -97,15 +97,9 @@ static TokenType get_identifier_type()
             }
         }
         break;
+    case 'd': return check_keyword(1, "ef", TOKEN_DEF);
     case 'e': return check_keyword(1, "lse", TOKEN_ELSE);
-    case 'f':
-        if (scanner.current - scanner.start > 1) {
-            switch (scanner.start[1]) {
-            case 'a': return check_keyword(2, "lse", TOKEN_FALSE);
-            case 'u': return check_keyword(2, "n", TOKEN_FUN);
-            }
-        }
-        break;
+    case 'f': return check_keyword(1, "alse", TOKEN_FALSE);
     case 'i': return check_keyword(1, "f", TOKEN_IF);
     case 'l': return check_keyword(1, "et", TOKEN_LET);
     case 'n': return check_keyword(1, "ull", TOKEN_NULL);

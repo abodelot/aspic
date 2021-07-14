@@ -23,16 +23,12 @@ typedef struct {
 
     // Line numbers
     IntArray lines;
-
-    // Source code buffer
-    const char* source;
 } Chunk;
 
 /**
  * Ctor
- * @param source: source code buffer
  */
-void chunk_init(Chunk* chunk, const char* source);
+void chunk_init(Chunk* chunk);
 
 /**
  * Dtor
@@ -65,10 +61,5 @@ unsigned int chunk_register_constant(Chunk*, Value value);
  * Get line number for the given instruction offset
  */
 int chunk_get_line(const Chunk* chunk, size_t offset);
-
-/**
- * Print given line from the source buffer
- */
-void chunk_print_line(const Chunk* chunk, int line);
 
 #endif

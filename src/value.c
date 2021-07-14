@@ -64,7 +64,7 @@ void value_repr(Value value)
         printf(value.as.boolean ? "true" : "false");
         break;
     case TYPE_CFUNC:
-        printf("<cfunc @%lx>", (size_t)value.as.cfunc);
+        printf("<cfunction @%lx>", (size_t)value.as.cfunc);
         break;
     case TYPE_NUMBER:
         printf("%g", value.as.number);
@@ -100,7 +100,7 @@ const char* value_type(Value value)
     case TYPE_BOOL:
         return "bool";
     case TYPE_CFUNC:
-        return "cfunc";
+        return "cfunction";
     case TYPE_ERROR:
         return "error";
     case TYPE_NULL:

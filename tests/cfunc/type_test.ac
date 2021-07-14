@@ -1,22 +1,42 @@
+let x;
+
 # string
 assert(type("hello") == "string");
 assert(type("0") == "string");
 assert(type("") == "string");
+x = "hello";
+assert(type(x) == "string");
 
 # number
 assert(type(0) == "number");
 assert(type(0.1) == "number");
 assert(type(-3) == "number");
 assert(type(-2.5) == "number");
+x = 4;
+assert(type(x) == "number");
 
 # bool
 assert(type(true) == "bool");
 assert(type(false) == "bool");
+x = true;
+assert(type(x) == "bool");
 
 # null
 assert(type(null) == "null");
+x = null;
+assert(type(x) == "null");
 
-# cfunc
-assert(type(type) == "cfunc");
-assert(type(assert) == "cfunc");
+# cfunction
+assert(type(type) == "cfunction");
+assert(type(assert) == "cfunction");
 assert(type(type(type)) == "string");
+x = type;
+assert(type(x) == "cfunction");
+
+# function
+def foobar(a) {
+    return a * a;
+}
+assert(type(foobar) == "function");
+x = foobar;
+assert(type(x) == "function");

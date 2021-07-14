@@ -56,7 +56,7 @@ static void vm_push(Value value)
 
 static Value vm_pop()
 {
-#if ASPIC_DEBUG
+#ifdef ASPIC_DEBUG
     if (vm.stack_top == vm.stack) {
         fprintf(stderr, "[fatal] vm_pop: cannot pop empty stack");
         exit(1);
@@ -72,16 +72,19 @@ static void vm_register_fn(const char* name, CFuncPtr fn)
 
 static VmResult vm_report_error(const Value* value)
 {
-    CallFrame* frame = &vm.frames[vm.frame_count - 1];
+    for (int i = 0; i < vm.frame_count; ++i) {
+        CallFrame* frame = &vm.frames[i];
+        ObjectFunction* function = frame->function;
 
-    const Chunk* chunk = &frame->function->chunk;
-    // -1 because ip points to the next iteration byte
-    size_t offset = frame->ip - chunk->code - 1;
-    int line = chunk_get_line(chunk, offset);
-    fprintf(stderr, "RuntimeError at line %d:\n    ", line);
-    chunk_print_line(chunk, line);
-    fprintf(stderr, "%s\n", value->as.error);
-
+        const Chunk* chunk = &function->chunk;
+        // -1 because ip points to the next iteration byte
+        const char* function_name = function->name == NULL ? "__main__" : function->name->chars;
+        size_t offset = frame->ip - chunk->code - 1;
+        int line = chunk_get_line(chunk, offset);
+        fprintf(stderr, "↳ at %s(), line %d:\n    ", function_name, line);
+        print_line(stderr, vm.source, line);
+    }
+    fprintf(stderr, "\n[RuntimeError] %s\n", value->as.error);
     vm_reset_stack();
     return VM_RUNTIME_ERROR;
 }
@@ -126,11 +129,11 @@ static VmResult vm_run()
     // Get the top-most callframe
     CallFrame* frame = &vm.frames[vm.frame_count - 1];
 
-#if ASPIC_DEBUG
+#ifdef ASPIC_DEBUG
     printf("== vm::run ==\n");
 #endif
     for (;;) {
-#if ASPIC_DEBUG
+#ifdef ASPIC_DEBUG
         instruction_dump(
             &frame->function->chunk,
             (int)(frame->ip - frame->function->chunk.code));
@@ -146,8 +149,22 @@ static VmResult vm_run()
         // Read next byte
         uint8_t instruction = vm_read_byte(frame);
         switch (instruction) {
-        case OP_RETURN:
-            return VM_OK;
+        case OP_RETURN: {
+            Value result = vm_pop();
+            // Function has ended: discard the CallFrame and reset stack head
+            // at the beginning of the CallFrame
+            --vm.frame_count;
+            vm.stack_top = frame->slots;
+            vm_push(result);
+            // Returning from __main__: exit
+            if (vm.frame_count == 0) {
+                return VM_OK;
+            }
+            // Update the current frame pointer
+            frame = &vm.frames[vm.frame_count - 1];
+            break;
+        }
+
         case OP_POP:
             vm_pop();
             break;
@@ -319,10 +336,30 @@ static VmResult vm_run()
             uint8_t argc = vm_read_byte(frame);
             Value fn = vm.stack_top[-(argc + 1)];
             if (fn.type == TYPE_CFUNC) {
+                // Call c function pointer
                 Value result = fn.as.cfunc(vm.stack_top - argc, argc);
                 // Pop callee + arguments, then push call result
                 vm.stack_top -= (argc + 1);
                 vm_push(result);
+            } else if (fn.type == TYPE_OBJECT && fn.as.object->type == OBJECT_FUNCTION) {
+                ObjectFunction* function = (ObjectFunction*)fn.as.object;
+
+                if (argc != function->arity) {
+                    vm_push(make_error(formatstr(
+                        "function %s() takes %d arguments, but got %d",
+                        function->name->chars,
+                        function->arity,
+                        argc)));
+                } else if (vm.frame_count == VM_FRAMES_MAX) {
+                    vm_push(make_error("Stack overflow"));
+                } else {
+                    // Initialize a new CallFrame for the called function
+                    frame = &vm.frames[vm.frame_count++];
+                    frame->function = function;
+                    frame->ip = function->chunk.code;
+                    // Pop call + arguments
+                    frame->slots = vm.stack_top - (argc + 1);
+                }
             } else {
                 // The first operand is not a function
                 vm_push(make_error(formatstr("Type '%s' is not callable", value_type(fn))));
@@ -339,15 +376,15 @@ static VmResult vm_run()
             return vm_report_error(vm.stack_top - 1);
         }
     }
-    // Program should end with an empty stack
-    assert(vm.stack == vm.stack_top);
-    return VM_OK;
+
+    return VM_RUNTIME_ERROR;
 }
 
 void vm_init()
 {
     vm_reset_stack();
     vm.objects_head = NULL;
+    vm.source = NULL;
 
     stringset_init(&vm.string_pool);
 
@@ -410,6 +447,8 @@ void vm_debug_globals()
 
 VmResult vm_interpret(const char* source)
 {
+    vm.source = source;
+
     // Get top-level main function
     ObjectFunction* function = parser_compile(source);
     if (function == NULL) {

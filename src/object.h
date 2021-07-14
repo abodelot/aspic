@@ -67,6 +67,8 @@ struct ObjectFunction {
     const ObjectString* name;
 };
 
-ObjectFunction* function_new(const char* source);
+/**
+ */
+ObjectFunction* function_new();
 
 #endif

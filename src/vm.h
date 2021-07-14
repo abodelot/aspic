@@ -38,6 +38,9 @@ typedef struct {
 
     // Hashtable of global variables
     Hashtable globals;
+
+    // Keep a reference to source code for printing lines in stacktrace
+    const char* source;
 } VM;
 
 typedef enum {

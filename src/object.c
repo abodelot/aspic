@@ -159,11 +159,11 @@ int string_compare(const ObjectString* a, const ObjectString* b)
 // ObjectFunction
 //------------------------------------------------------------------------------
 
-ObjectFunction* function_new(const char* source)
+ObjectFunction* function_new()
 {
     ObjectFunction* function = object_new(OBJECT_FUNCTION, sizeof(ObjectFunction));
     function->arity = 0;
     function->name = NULL;
-    chunk_init(&function->chunk, source);
+    chunk_init(&function->chunk);
     return function;
 }
