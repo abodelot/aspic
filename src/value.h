@@ -34,20 +34,29 @@ typedef struct Value {
 /**
  * Ctors for Value
  */
-Value make_number(double value);
 Value make_bool(bool value);
-Value make_cfunc(CFuncPtr fn);
-Value make_function(ObjectFunction* fn);
-Value make_null();
-Value make_error(const char* error);
 
-// From an already created ObjectString
+Value make_cfunction(CFuncPtr fn);
+
+/**
+ * Build an error (TYPE_ERROR)
+ * Error message is dynamically allocated
+ */
+Value make_error(const char* format, ...);
+
+Value make_function(ObjectFunction* fn);
+
+Value make_null();
+
+Value make_number(double value);
+
+// Build a String, from an already created ObjectString
 Value make_string(const ObjectString* string);
 
-// From a buffer of chars, will create an internal ObjectString
+// Build a String, from a buffer of chars, will create an internal ObjectString
 Value make_string_from_buffer(const char* chars, int length);
 
-// From a buffer ending with '\0', will create an internal ObjectString
+// Build a String, from a buffer ending with '\0', will create an internal ObjectString
 Value make_string_from_cstr(const char* str);
 
 /**

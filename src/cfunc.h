@@ -10,11 +10,10 @@
 Value aspic_assert(Value* argv, int argc);
 
 /**
- * Return length of given string
- * @param 1: string
- * @return int
+ * Returns an approximation of processor time used by the program.
+ * @return number of seconds used
  */
-Value aspic_len(Value* argv, int argc);
+Value aspic_clock(Value* argv, int argc);
 
 /**
  * Get user input from stdin
@@ -22,6 +21,20 @@ Value aspic_len(Value* argv, int argc);
  * @return string
  */
 Value aspic_input(Value* argv, int argc);
+
+/**
+ * Convert to integer
+ * @param 1: string representation
+ * @param 2: base (default: 10)
+ */
+Value aspic_int(Value* argv, int argc);
+
+/**
+ * Return length of given string
+ * @param 1: string
+ * @return int
+ */
+Value aspic_len(Value* argv, int argc);
 
 /**
  * Print given arguments, each separated by a space.

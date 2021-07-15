@@ -57,27 +57,24 @@ const char* op2str(OpCode opcode)
 
 static Value binary_op_error(OpCode op, Value a, Value b)
 {
-    return make_error(formatstr(
-        "Unsupported operator %s for types <%s> and <%s>",
+    return make_error("Unsupported operator %s for types <%s> and <%s>",
         op2str(op),
         value_type(a),
-        value_type(b)));
+        value_type(b));
 }
 
 static Value unary_op_error(OpCode op, Value a)
 {
-    return make_error(formatstr(
-        "Unsupported operator %s for type <%s>",
+    return make_error("Unsupported operator %s for type <%s>",
         op2str(op),
-        value_type(a)));
+        value_type(a));
 }
 
 static Value comparison_error(Value a, Value b)
 {
-    return make_error(formatstr(
-        "Cannot compare types <%s> and <%s>",
+    return make_error("Cannot compare types <%s> and <%s>",
         value_type(a),
-        value_type(b)));
+        value_type(b));
 }
 
 Value op_not(Value value)
@@ -232,9 +229,8 @@ Value op_subscript_get(Value collection, Value index)
                 return make_string_from_buffer(string->chars + string->length + i, 1);
             }
             // Index out of range
-            return make_error(formatstr(
-                "'%s' index %d is out of range [%d:%d]",
-                value_type(collection), i, -string->length, string->length - 1));
+            return make_error("'%s' index %d is out of range [%d:%d]",
+                value_type(collection), i, -string->length, string->length - 1);
         }
         break;
     default:
@@ -247,7 +243,5 @@ Value op_subscript_set(Value collection, Value index, Value value)
 {
     (void)index;
     (void)value;
-    return make_error(formatstr(
-        "'%s' does not support item assignment",
-        value_type(collection)));
+    return make_error("'%s' does not support item assignment", value_type(collection));
 }

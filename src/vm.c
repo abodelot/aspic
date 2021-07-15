@@ -67,10 +67,10 @@ static Value vm_pop()
 
 static void vm_register_fn(const char* name, CFuncPtr fn)
 {
-    hashtable_set(&vm.globals, string_new(name, strlen(name)), make_cfunc(fn), false);
+    hashtable_set(&vm.globals, string_new(name, strlen(name)), make_cfunction(fn), false);
 }
 
-static VmResult vm_report_error(const Value* value)
+static void vm_report_error(const Value* value)
 {
     for (int i = 0; i < vm.frame_count; ++i) {
         CallFrame* frame = &vm.frames[i];
@@ -85,16 +85,13 @@ static VmResult vm_report_error(const Value* value)
         print_line(stderr, vm.source, line);
     }
     fprintf(stderr, "\n[RuntimeError] %s\n", value->as.error);
-    vm_reset_stack();
-    return VM_RUNTIME_ERROR;
 }
 
 // Declare a new global variable
 static void vm_decl_global(const ObjectString* name, bool read_only)
 {
     if (!hashtable_set(&vm.globals, name, vm_pop(), read_only)) {
-        vm_push(make_error(formatstr(
-            "Identifier '%s' has already been declared", name->chars)));
+        vm_push(make_error("Identifier '%s' has already been declared", name->chars));
     }
 }
 
@@ -105,8 +102,7 @@ static void vm_push_global_value(const ObjectString* name)
     if (value) {
         vm_push(*value);
     } else {
-        vm_push(make_error(formatstr(
-            "Identifier '%s' is not defined", name->chars)));
+        vm_push(make_error("Identifier '%s' is not defined", name->chars));
     }
 }
 
@@ -115,12 +111,10 @@ static void vm_update_global_value(const ObjectString* name)
 {
     HashtableLookup res = hashtable_update(&vm.globals, name, vm_peek(0));
     if (res == HASHTABLE_MISS) {
-        vm_push(make_error(formatstr(
-            "Cannot assign to undefined variable '%s'", name->chars)));
+        vm_push(make_error("Cannot assign to undefined variable '%s'", name->chars));
     }
     if (res == HASHTABLE_READ_ONLY) {
-        vm_push(make_error(formatstr(
-            "Cannot assign to constant variable '%s'", name->chars)));
+        vm_push(make_error("Cannot assign to constant variable '%s'", name->chars));
     }
 }
 
@@ -345,11 +339,10 @@ static VmResult vm_run()
                 ObjectFunction* function = (ObjectFunction*)fn.as.object;
 
                 if (argc != function->arity) {
-                    vm_push(make_error(formatstr(
-                        "function %s() takes %d arguments, but got %d",
+                    vm_push(make_error("function %s() takes %d arguments, but got %d",
                         function->name->chars,
                         function->arity,
-                        argc)));
+                        argc));
                 } else if (vm.frame_count == VM_FRAMES_MAX) {
                     vm_push(make_error("Stack overflow"));
                 } else {
@@ -362,7 +355,7 @@ static VmResult vm_run()
                 }
             } else {
                 // The first operand is not a function
-                vm_push(make_error(formatstr("Type '%s' is not callable", value_type(fn))));
+                vm_push(make_error("Type '%s' is not callable", value_type(fn)));
             }
             break;
         }
@@ -373,7 +366,9 @@ static VmResult vm_run()
 
         // Check if an error has been pushed in this iteration
         if (vm.stack_top[-1].type == TYPE_ERROR) {
-            return vm_report_error(vm.stack_top - 1);
+            vm_report_error(vm.stack_top - 1);
+            vm_pop();
+            return VM_RUNTIME_ERROR;
         }
     }
 
@@ -393,8 +388,10 @@ void vm_init()
 
     // Standard functions
     vm_register_fn("assert", aspic_assert);
-    vm_register_fn("len", aspic_len);
+    vm_register_fn("clock", aspic_clock);
     vm_register_fn("input", aspic_input);
+    vm_register_fn("int", aspic_int);
+    vm_register_fn("len", aspic_len);
     vm_register_fn("print", aspic_print);
     vm_register_fn("str", aspic_str);
     vm_register_fn("type", aspic_type);
@@ -447,6 +444,7 @@ void vm_debug_globals()
 
 VmResult vm_interpret(const char* source)
 {
+    vm_reset_stack();
     vm.source = source;
 
     // Get top-level main function

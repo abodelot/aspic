@@ -1,0 +1,28 @@
+# base 10 (default)
+assert(int(5) == 5);
+assert(int("5") == 5);
+assert(int(-100) == -100);
+assert(int("-100") == -100);
+
+# base 2
+assert(int("101", 2) == 5);
+assert(int("10000000", 2) == 128);
+assert(int("11111111", 2) == 255);
+
+# base 8
+assert(int("644", 8) == 420);
+assert(int("0644", 8) == 420);
+assert(int("10", 8) == 8);
+assert(int("11", 8) == 9);
+
+# base 16
+assert(int("0xA", 16) == 10);
+assert(int("ff", 16) == 255);
+assert(int("FF", 16) == 255);
+assert(int("0xff", 16) == 255);
+
+# truncate decimals
+assert(int(4.1) == 4);
+assert(int(9.99999) == 9);
+assert(int(-1.0001) == -1);
+assert(int(-2.6) == -2);

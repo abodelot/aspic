@@ -1,6 +1,5 @@
 #include "utils.h"
 
-#include <stdarg.h> // va_list
 #include <stdio.h>
 #include <string.h> // strchr
 
@@ -28,26 +27,6 @@ char* alloc_string(size_t length)
         exit(1);
     }
     buffer[length] = '\0';
-    return buffer;
-}
-
-char* formatstr(const char* format, ...)
-{
-    va_list args;
-    va_start(args, format);
-
-    // Compute buffer size
-    size_t size = vsnprintf(NULL, 0, format, args);
-
-    // Rewind argument list
-    va_end(args);
-    va_start(args, format);
-
-    // Allocate and write to buffer
-    char* buffer = malloc(size + 1);
-    vsnprintf(buffer, size + 1, format, args);
-    va_end(args);
-
     return buffer;
 }
 

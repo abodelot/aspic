@@ -17,12 +17,6 @@ void* xrealloc(void* pointer, size_t object_size, size_t n);
 char* alloc_string(size_t length);
 
 /**
- * Dynamically allocate and format a string.
- * @return allocated buffer.
- */
-char* formatstr(const char* format, ...);
-
-/**
  * Print a trimmed line from buffer
  */
 void print_line(FILE* stream, const char* buffer, int line);

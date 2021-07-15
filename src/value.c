@@ -3,6 +3,7 @@
 #include "shared.h"
 #include "utils.h"
 
+#include <stdarg.h> // va_list
 #include <stdio.h>
 #include <string.h>
 
@@ -16,7 +17,7 @@ Value make_bool(bool value)
     return (Value) { .type = TYPE_BOOL, .as.boolean = value };
 }
 
-Value make_cfunc(CFuncPtr fn)
+Value make_cfunction(CFuncPtr fn)
 {
     return (Value) { .type = TYPE_CFUNC, .as.cfunc = fn };
 }
@@ -26,9 +27,24 @@ Value make_null()
     return (Value) { .type = TYPE_NULL };
 }
 
-Value make_error(const char* error)
+Value make_error(const char* format, ...)
 {
-    return (Value) { .type = TYPE_ERROR, .as.error = error };
+    va_list args;
+    va_start(args, format);
+
+    // Compute buffer size
+    size_t size = vsnprintf(NULL, 0, format, args);
+
+    // Rewind argument list
+    va_end(args);
+    va_start(args, format);
+
+    // Allocate and write to buffer
+    char* buffer = malloc(size + 1);
+    vsnprintf(buffer, size + 1, format, args);
+    va_end(args);
+
+    return (Value) { .type = TYPE_ERROR, .as.error = buffer };
 }
 
 Value make_string(const ObjectString* string)
