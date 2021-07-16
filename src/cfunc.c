@@ -103,10 +103,28 @@ Value aspic_len(Value* argv, int argc)
         return make_error("len() expects 1 argument, got %d", argc);
     }
 
-    if (argv[0].type == TYPE_OBJECT && argv[0].as.object->type == OBJECT_STRING) {
-        return make_number(((const ObjectString*)argv[0].as.object)->length);
+    if (argv[0].type == TYPE_OBJECT) {
+        const Object* object = argv[0].as.object;
+        if (object->type == OBJECT_STRING) {
+            return make_number(((const ObjectString*)object)->length);
+        }
+        if (object->type == OBJECT_ARRAY) {
+            return make_number(((const ObjectArray*)object)->array.count);
+        }
     }
     return make_error("cannot get length for type %s", value_type(*argv));
+}
+
+Value aspic_pop(Value* argv, int argc)
+{
+    if (argc != 1) {
+        return make_error("pop() expects 1 argument, got %d", argc);
+    }
+    if (argv[0].type != TYPE_OBJECT && argv[0].as.object->type != OBJECT_ARRAY) {
+        return make_error("pop() expects an array, got '%s'", value_type(argv[0]));
+    }
+
+    return value_array_pop(&((ObjectArray*)argv[0].as.object)->array);
 }
 
 Value aspic_print(Value* argv, int argc)
@@ -115,11 +133,23 @@ Value aspic_print(Value* argv, int argc)
         if (i > 0) {
             putchar(' ');
         }
-        ObjectString* str = (ObjectString*)aspic_str(argv + i, 1).as.object;
-        printf("%s", str->chars);
+        value_print(argv[i]);
     }
     putchar('\n');
     return make_null();
+}
+
+Value aspic_push(Value* argv, int argc)
+{
+    if (argc != 2) {
+        return make_error("push() expects 2 arguments, got %d", argc);
+    }
+    if (argv[0].type != TYPE_OBJECT && argv[0].as.object->type != OBJECT_ARRAY) {
+        return make_error("push() expects an array, got '%s'", value_type(argv[0]));
+    }
+
+    value_array_push(&((ObjectArray*)argv[0].as.object)->array, argv[1]);
+    return argv[0];
 }
 
 Value aspic_str(Value* argv, int argc)
@@ -131,7 +161,7 @@ Value aspic_str(Value* argv, int argc)
     switch (argv[0].type) {
     case TYPE_CFUNC: {
         char buffer[64];
-        snprintf(buffer, sizeof buffer, "<cfunc %lx>", (size_t)argv[0].as.cfunc);
+        snprintf(buffer, sizeof buffer, "0x%zx", (size_t)argv[0].as.cfunc);
         return make_string_from_cstr(buffer);
     }
 
@@ -151,6 +181,8 @@ Value aspic_str(Value* argv, int argc)
 
     case TYPE_OBJECT:
         switch (argv[0].as.object->type) {
+        case OBJECT_ARRAY:
+            return make_error("Cannot convert array to string");
         case OBJECT_FUNCTION:
             return make_string(((ObjectFunction*)argv[0].as.object)->name);
         case OBJECT_STRING:

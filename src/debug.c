@@ -144,6 +144,8 @@ int instruction_dump(const Chunk* chunk, int offset)
 
     // Call operator ()
     case OP_CALL:
+    // Array expression []
+    case OP_ARRAY:
         return instruction_byte(desc, chunk, offset);
 
     default:

@@ -51,6 +51,7 @@ const char* op2str(OpCode opcode)
         STROP(OP_SUBSCRIPT_GET)
         STROP(OP_SUBSCRIPT_SET)
         STROP(OP_CALL)
+        STROP(OP_ARRAY)
     }
     return NULL;
 }
@@ -216,32 +217,56 @@ Value op_greater_equal(Value b, Value a)
 
 Value op_subscript_get(Value collection, Value index)
 {
-    switch (collection.type) {
-    case TYPE_OBJECT:
-        if (collection.as.object->type == OBJECT_STRING && index.type == TYPE_NUMBER) {
+    if (collection.type == TYPE_OBJECT && index.type == TYPE_NUMBER) {
+        int i = (int)index.as.number;
+        if (collection.as.object->type == OBJECT_STRING) {
             const ObjectString* string = (const ObjectString*)collection.as.object;
-            int i = index.as.number;
-            if (i >= 0 && i < string->length) {
-                // Positive index
+            if (i >= -string->length && i < string->length) {
+                if (i < 0) {
+                    i += string->length;
+                }
                 return make_string_from_buffer(string->chars + i, 1);
-            } else if (i >= -string->length && i < 0) {
-                // Negative index
-                return make_string_from_buffer(string->chars + string->length + i, 1);
             }
             // Index out of range
-            return make_error("'%s' index %d is out of range [%d:%d]",
-                value_type(collection), i, -string->length, string->length - 1);
+            return make_error("string index %d is out of range [%d:%d]",
+                i, -string->length, string->length - 1);
         }
-        break;
-    default:
-        break;
+
+        if (collection.as.object->type == OBJECT_ARRAY) {
+            const ObjectArray* object = (const ObjectArray*)collection.as.object;
+            if (i >= -object->array.count && i < object->array.count) {
+                if (i < 0) {
+                    i += object->array.count;
+                }
+                return object->array.values[i];
+            }
+            // Index out of range
+            return make_error("array index %d is out of range [%d:%d]",
+                i, -object->array.count, object->array.count - 1);
+        }
     }
     return binary_op_error(OP_SUBSCRIPT_GET, collection, index);
 }
 
 Value op_subscript_set(Value collection, Value index, Value value)
 {
-    (void)index;
-    (void)value;
+    if (collection.type == TYPE_OBJECT && collection.as.object->type == OBJECT_ARRAY) {
+        if (index.type != TYPE_NUMBER) {
+            return make_error("index must be an integer, not '%s'", value_type(index));
+        }
+
+        ObjectArray* object = (ObjectArray*)collection.as.object;
+        int i = (int)index.as.number;
+        if (i >= -object->array.count && i < object->array.count) {
+            if (i < 0) {
+                i += object->array.count;
+            }
+            object->array.values[i] = value;
+            return value;
+        }
+        // Index out of range
+        return make_error("array index %d is out of range [%d:%d]",
+            i, -object->array.count, object->array.count - 1);
+    }
     return make_error("'%s' does not support item assignment", value_type(collection));
 }

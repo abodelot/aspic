@@ -74,7 +74,7 @@ static void vm_report_error(const Value* value)
 {
     for (int i = 0; i < vm.frame_count; ++i) {
         CallFrame* frame = &vm.frames[i];
-        ObjectFunction* function = frame->function;
+        const ObjectFunction* function = frame->function;
 
         const Chunk* chunk = &function->chunk;
         // -1 because ip points to the next iteration byte
@@ -118,11 +118,8 @@ static void vm_update_global_value(const ObjectString* name)
     }
 }
 
-static VmResult vm_run()
+static VmResult vm_run(CallFrame* frame)
 {
-    // Get the top-most callframe
-    CallFrame* frame = &vm.frames[vm.frame_count - 1];
-
 #ifdef ASPIC_DEBUG
     printf("== vm::run ==\n");
 #endif
@@ -131,14 +128,6 @@ static VmResult vm_run()
         instruction_dump(
             &frame->function->chunk,
             (int)(frame->ip - frame->function->chunk.code));
-        printf("        [");
-        for (const Value* slot = vm.stack; slot < vm.stack_top; ++slot) {
-            if (slot != vm.stack) {
-                printf(", ");
-            }
-            value_repr(*slot);
-        }
-        printf("]\n");
 #endif
         // Read next byte
         uint8_t instruction = vm_read_byte(frame);
@@ -359,10 +348,31 @@ static VmResult vm_run()
             }
             break;
         }
+
+        // Array expression
+        case OP_ARRAY: {
+            uint8_t item_count = vm_read_byte(frame);
+            Value array = make_array(vm.stack_top - item_count, item_count);
+            // Pop items, then push array
+            vm.stack_top -= item_count;
+            vm_push(array);
+            break;
+        }
+
         default:
             assert(false); // Unreachable
             break;
         }
+#ifdef ASPIC_DEBUG
+        printf("        [");
+        for (const Value* slot = vm.stack; slot < vm.stack_top; ++slot) {
+            if (slot != vm.stack) {
+                printf(", ");
+            }
+            value_repr(*slot);
+        }
+        printf("]\n");
+#endif
 
         // Check if an error has been pushed in this iteration
         if (vm.stack_top[-1].type == TYPE_ERROR) {
@@ -371,7 +381,6 @@ static VmResult vm_run()
             return VM_RUNTIME_ERROR;
         }
     }
-
     return VM_RUNTIME_ERROR;
 }
 
@@ -392,7 +401,9 @@ void vm_init()
     vm_register_fn("input", aspic_input);
     vm_register_fn("int", aspic_int);
     vm_register_fn("len", aspic_len);
+    vm_register_fn("pop", aspic_pop);
     vm_register_fn("print", aspic_print);
+    vm_register_fn("push", aspic_push);
     vm_register_fn("str", aspic_str);
     vm_register_fn("type", aspic_type);
 }
@@ -462,7 +473,7 @@ VmResult vm_interpret(const char* source)
     // Set up stack window at the bottom of VM stack
     frame->slots = vm.stack;
 
-    return vm_run();
+    return vm_run(frame);
 }
 
 Value vm_last_value()

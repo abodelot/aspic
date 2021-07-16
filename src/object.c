@@ -1,5 +1,6 @@
 #include "object.h"
 #include "utils.h"
+#include "value_array.h"
 #include "vm.h"
 
 #include <stdio.h>
@@ -26,6 +27,12 @@ static void* object_new(ObjectType type, size_t size)
 void object_free(Object* object)
 {
     switch (object->type) {
+    case OBJECT_ARRAY: {
+        ObjectArray* array = (ObjectArray*)object;
+        value_array_free(&array->array);
+        free(array);
+        break;
+    }
     case OBJECT_FUNCTION: {
         // Note: no need to destroy function->name, Object pointers are already
         // tracked by the VM.
@@ -52,6 +59,10 @@ bool object_equal(const Object* a, const Object* b)
 {
     if (a->type == b->type) {
         switch (a->type) {
+        case OBJECT_ARRAY:
+            return value_array_equal(
+                &((const ObjectArray*)a)->array,
+                &((const ObjectArray*)b)->array);
         case OBJECT_STRING:
             return string_equal((const ObjectString*)a, (const ObjectString*)b);
         case OBJECT_FUNCTION:
@@ -166,4 +177,14 @@ ObjectFunction* function_new()
     function->name = NULL;
     chunk_init(&function->chunk);
     return function;
+}
+
+// ObjectArray
+//------------------------------------------------------------------------------
+
+ObjectArray* array_new()
+{
+    ObjectArray* self = object_new(OBJECT_ARRAY, sizeof(ObjectArray));
+    value_array_init(&self->array);
+    return self;
 }

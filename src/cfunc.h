@@ -30,11 +30,18 @@ Value aspic_input(Value* argv, int argc);
 Value aspic_int(Value* argv, int argc);
 
 /**
- * Return length of given string
- * @param 1: string
+ * Return length of given array or string
+ * @param 1: string|array
  * @return int
  */
 Value aspic_len(Value* argv, int argc);
+
+/**
+ * Remove value from array
+ * @param 1: array
+ * @return removed value
+ */
+Value aspic_pop(Value* argv, int argc);
 
 /**
  * Print given arguments, each separated by a space.
@@ -42,6 +49,14 @@ Value aspic_len(Value* argv, int argc);
  * @return null
  */
 Value aspic_print(Value* argv, int argc);
+
+/**
+ * Append value to array
+ * @param 1: array
+ * @param 2: value to push
+ * @return array
+ */
+Value aspic_push(Value* argv, int argc);
 
 /**
  * Get string representation of given value

@@ -1,6 +1,12 @@
-# len
+# strings
 assert(len("") == 0);
 assert(len(" ") == 1);
 assert(len("a") == 1);
 assert(len("abc") == 3);
 assert(len("abc" + "def") == 6);
+
+# arrays
+assert(len([]) == 0);
+assert(len([0]) == 1);
+assert(len([""]) == 1);
+assert(len([10, 20, 30]) == 3);

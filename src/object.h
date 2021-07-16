@@ -5,8 +5,9 @@
 #include "chunk.h"
 
 typedef enum  {
-    OBJECT_STRING,  // Strings of chars
-    OBJECT_FUNCTION // User-defined functions
+    OBJECT_ARRAY,    // Dynamic array
+    OBJECT_FUNCTION, // User-defined functions
+    OBJECT_STRING,   // Strings of chars
 } ObjectType;
 
 struct Object {
@@ -68,7 +69,21 @@ struct ObjectFunction {
 };
 
 /**
+ * Create a new object OBJECT_FUNCTION
  */
 ObjectFunction* function_new();
+
+// ObjectArray
+//------------------------------------------------------------------------------
+
+struct ObjectArray {
+    Object object;
+    ValueArray array;
+};
+
+/**
+ * Create a new object OBJECT_ARRAY
+ */
+ObjectArray* array_new();
 
 #endif

@@ -8,6 +8,10 @@ assert("0");
 assert(" ");
 assert("false");
 assert("null");
+assert([]);
+assert([0]);
+assert([null]);
+assert([false]);
 assert(true == true);
 assert(null == null);
 assert(false == false);
@@ -21,6 +25,7 @@ assert(!0 == false);
 assert(!1 == false);
 assert(!"" == false);
 assert(!"!" == false);
+assert(![] == false);
 
 let var = true;
 assert(var);

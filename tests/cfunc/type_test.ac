@@ -40,3 +40,9 @@ def foobar(a) {
 assert(type(foobar) == "function");
 x = foobar;
 assert(type(x) == "function");
+
+# array
+assert(type([]) == "array");
+assert(type([1]) == "array");
+x = ["a", "b", "c"];
+assert(type(x) == "array");

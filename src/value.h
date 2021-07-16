@@ -6,6 +6,7 @@
 typedef struct Object Object;
 typedef struct ObjectString ObjectString;
 typedef struct ObjectFunction ObjectFunction;
+typedef struct ObjectArray ObjectArray;
 
 typedef enum {
     TYPE_CFUNC, // native C function
@@ -30,6 +31,8 @@ typedef struct Value {
     ValueData as;
     ValueType type;
 } Value;
+
+Value make_array(const Value* values, int count);
 
 /**
  * Ctors for Value
@@ -58,6 +61,11 @@ Value make_string_from_buffer(const char* chars, int length);
 
 // Build a String, from a buffer ending with '\0', will create an internal ObjectString
 Value make_string_from_cstr(const char* str);
+
+/**
+ * Print value to stdout
+ */
+void value_print(Value value);
 
 /**
  * Print value to stdout in their canonical representation

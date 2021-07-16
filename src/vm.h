@@ -14,7 +14,7 @@
  */
 typedef struct {
     // The function being called
-    ObjectFunction* function;
+    const ObjectFunction* function;
     // Points into the vm.stack at the first slot the function can use
     Value* slots;
     // Instruction pointer: points to the bytecode array (chunk.code)

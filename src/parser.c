@@ -44,6 +44,7 @@ static void rule_unary_op(bool);
 static void rule_binary_op(bool);
 static void rule_number(bool);
 static void rule_string(bool);
+static void rule_array_literal(bool);
 static void rule_literal(bool);
 static void rule_fn_call(bool);
 static void rule_subscript(bool);
@@ -58,7 +59,7 @@ ParseRule rules[] = {
     [TOKEN_RIGHT_PAREN] = { NULL, NULL, PREC_NONE },
     [TOKEN_LEFT_BRACE] = { NULL, NULL, PREC_NONE },
     [TOKEN_RIGHT_BRACE] = { NULL, NULL, PREC_NONE },
-    [TOKEN_LEFT_BRACKET] = { NULL, rule_subscript, PREC_CALL },
+    [TOKEN_LEFT_BRACKET] = { rule_array_literal, rule_subscript, PREC_CALL },
     [TOKEN_RIGHT_BRACKET] = { NULL, NULL, PREC_NONE },
     [TOKEN_COMMA] = { NULL, NULL, PREC_NONE },
     [TOKEN_DOT] = { NULL, NULL, PREC_NONE },
@@ -744,6 +745,26 @@ static void rule_unary_op(bool _assignable)
     default:
         return; // Unreachable
     }
+}
+
+static void rule_array_literal(bool _assignable)
+{
+    (void)_assignable;
+
+    uint8_t item_count = 0;
+    if (parser.current.type != TOKEN_RIGHT_BRACKET) {
+        do {
+            expression();
+            // Size is stored on a single byte
+            if (item_count == UINT8_MAX) {
+                error("Cannot handle more than 255 element in array expression");
+            }
+            ++item_count;
+        } while (match(TOKEN_COMMA));
+    }
+    consume(TOKEN_RIGHT_BRACKET, "Expected ']' after array expression");
+    emit_byte(OP_ARRAY);
+    emit_byte(item_count);
 }
 
 static void rule_literal(bool _assignable)

@@ -1,0 +1,76 @@
+const array = [10, 20, 30, "abc", "def"];
+
+# Subscript get, positive index
+assert(array[0] == 10);
+assert(array[len(array) - 1] == "def");
+
+# Subscript get, negative index
+assert(array[-len(array)] == 10);
+assert(array[-1] == "def");
+
+# Subscript set, positive index
+assert((array[0] = 4034) == 4034);
+assert(array == [4034, 20, 30, "abc", "def"]);
+
+# Subscript set, negative index
+array[-2] = null;
+assert(array == [4034, 20, 30, null, "def"]);
+
+# Subscript set, chained operations
+array[0] = array[1] = array[2] = 0;
+assert(array == [0, 0, 0, null, "def"]);
+
+# Push value (return array)
+assert(push(array, "ghi") == [0, 0, 0, null, "def", "ghi"]);
+assert(push(array, "xyz") == [0, 0, 0, null, "def", "ghi", "xyz"]);
+assert(array == [0, 0, 0, null, "def", "ghi", "xyz"]);
+assert(push([10, 11], 12) == [10, 11, 12]);
+
+# Pop value (return last)
+const last = pop(array);
+assert(last == "xyz");
+assert(array == [0, 0, 0, null, "def", "ghi"]);
+assert(pop(["x"]) == "x");
+
+# Circular references
+const circular = [10, 20];
+push(circular, circular);
+assert(circular[-1] == circular);
+assert(circular[2][2][2][2][2][2][2] == circular);
+const t = [circular, circular];
+assert(t[0] == t[1]);
+assert(t[0][2] == circular);
+
+# Sort array with user function
+const animals = ["Elephant", "Cat", "Mouse", "Tiger", "Dog", "Horse", "Duck", "Eagle"];
+def selection_sort(array) {
+    const size = len(array);
+    let i = 0;
+    while (i < size) {
+        let min = i;
+        let j = i + 1;
+        while (j < size) {
+            if (array[j] < array[min]) {
+                min = j;
+            }
+            j = j + 1;
+        }
+        if (min != i) {
+            const tmp = array[min];
+            array[min] = array[i];
+            array[i] = tmp;
+        }
+        i = i + 1;
+    }
+}
+
+selection_sort(animals);
+assert(animals == ["Cat", "Dog", "Duck", "Eagle", "Elephant", "Horse", "Mouse", "Tiger"]);
+
+# Operators precedence
+const functions = [len, type, selection_sort];
+const colors = ["blue", "red", "green"];
+assert(functions[0](colors) == 3);
+assert(functions[1](colors) == "array");
+functions[2](colors);
+assert(colors == ["blue", "green", "red"]);

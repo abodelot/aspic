@@ -73,3 +73,15 @@ assert(f(5, 4) == 20);
 const count_char = count;
 assert(count_char == count);
 assert(count_char("Foobar", "o") == 2);
+
+# Function arguments are references to objects
+def double_array(array) {
+    let i = 0;
+    while (i < len(array)) {
+        array[i] = array[i] * 2;
+        i = i + 1;
+    }
+}
+let array = [10, 20, 30];
+double_array(array);
+assert(array == [20, 40, 60]);

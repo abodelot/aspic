@@ -67,6 +67,9 @@ typedef enum {
 
     // Function call ()
     OP_CALL,
+
+    // Array expression [] (1 byte operand: item count)
+    OP_ARRAY,
 } OpCode;
 
 // Convert enum to string, for debug purpose
