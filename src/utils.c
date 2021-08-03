@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <string.h> // strchr
 
-void* xrealloc(void* pointer, size_t object_size, size_t n)
+void* realloc_array(void* pointer, size_t object_size, size_t n)
 {
     size_t new_size = object_size * n;
     if (new_size == 0) {

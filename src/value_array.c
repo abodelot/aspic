@@ -21,7 +21,7 @@ void value_array_push(ValueArray* self, Value value)
 {
     if (self->capacity < self->count + 1) {
         self->capacity = self->capacity < 8 ? 8 : self->capacity * 2;
-        self->values = xrealloc(self->values, sizeof(Value), self->capacity);
+        self->values = realloc_array(self->values, sizeof(Value), self->capacity);
     }
     self->values[self->count++] = value;
 }
@@ -38,7 +38,7 @@ void value_array_reserve(ValueArray* self, int n)
 {
     if (self->capacity < n) {
         self->capacity = n;
-        self->values = xrealloc(self->values, sizeof(Value), n);
+        self->values = realloc_array(self->values, sizeof(Value), n);
     }
 }
 

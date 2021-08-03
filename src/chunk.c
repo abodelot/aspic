@@ -24,7 +24,7 @@ static void int_array_push(IntArray* array, int value)
 {
     if (array->capacity < array->count + 1) {
         array->capacity = array->capacity < 8 ? 8 : array->capacity * 2;
-        array->values = xrealloc(array->values, sizeof(int), array->capacity);
+        array->values = realloc_array(array->values, sizeof(int), array->capacity);
     }
 
     array->values[array->count++] = value;
@@ -56,7 +56,7 @@ void chunk_write(Chunk* chunk, uint8_t byte, int lineno)
 {
     if (chunk->capacity < chunk->count + 1) {
         chunk->capacity = chunk->capacity < 8 ? 8 : chunk->capacity * 2;
-        chunk->code = xrealloc(chunk->code, sizeof(uint8_t), chunk->capacity);
+        chunk->code = realloc_array(chunk->code, sizeof(uint8_t), chunk->capacity);
     }
     chunk->code[chunk->count++] = byte;
 

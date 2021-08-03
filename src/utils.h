@@ -8,7 +8,7 @@
  * (Re)allocate n * object_size. Use realloc.
  * Exit program immediately if allocation failed.
  */
-void* xrealloc(void* pointer, size_t object_size, size_t n);
+void* realloc_array(void* pointer, size_t object_size, size_t n);
 
 /**
  * Allocate buffer of size length+1 with last char set at \0.
