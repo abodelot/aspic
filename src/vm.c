@@ -1,11 +1,13 @@
 #include "vm.h"
-#include "cfunc.h"
 #include "debug.h"
 #include "object.h"
 #include "parser.h"
 #include "shared.h"
 #include "utils.h"
 #include "value.h"
+
+#include "stdlib/os.h"
+#include "stdlib/stdlib.h"
 
 #include <assert.h>
 #include <stdio.h>
@@ -400,6 +402,9 @@ void vm_init()
     vm_register_fn("clock", aspic_clock);
     vm_register_fn("input", aspic_input);
     vm_register_fn("int", aspic_int);
+    vm_register_fn("ls", aspic_os_ls);
+    vm_register_fn("cd", aspic_os_cd);
+    vm_register_fn("getenv", aspic_os_getenv);
     vm_register_fn("len", aspic_len);
     vm_register_fn("pop", aspic_pop);
     vm_register_fn("print", aspic_print);

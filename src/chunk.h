@@ -2,9 +2,9 @@
 #define ASPIC_CHUNK_H
 
 #include "op_code.h"
+#include "shared.h"
 #include "value.h"
 #include "value_array.h"
-#include "shared.h"
 
 typedef struct {
     int count;

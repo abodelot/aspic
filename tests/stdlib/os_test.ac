@@ -1,0 +1,8 @@
+# getenv
+assert(getenv("FOOBAR") == null);
+assert(len(getenv("PATH")) > 0);
+
+# cd/ls
+cd("tests");
+cd("types");
+assert(len(ls()) == 3);

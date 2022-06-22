@@ -1,8 +1,8 @@
 #ifndef ASPIC_HASHTABLE_H
 #define ASPIC_HASHTABLE_H
 
-#include "value.h"
 #include "object.h"
+#include "value.h"
 
 /**
  * Hashtable<const ObjectString*, Value>

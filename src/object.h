@@ -1,10 +1,10 @@
 #ifndef ASPIC_OBJECT_H
 #define ASPIC_OBJECT_H
 
-#include "value.h"
 #include "chunk.h"
+#include "value.h"
 
-typedef enum  {
+typedef enum {
     OBJECT_ARRAY,    // Dynamic array
     OBJECT_FUNCTION, // User-defined functions
     OBJECT_STRING,   // Strings of chars

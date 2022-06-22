@@ -2,9 +2,9 @@
 #define ASPIC_VM_H
 
 #include "chunk.h"
-#include "value.h"
 #include "hashtable.h"
 #include "stringset.h"
+#include "value.h"
 
 #define VM_FRAMES_MAX 64
 #define VM_STACK_MAX (VM_FRAMES_MAX * UINT8_MAX)

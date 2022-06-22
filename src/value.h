@@ -35,8 +35,9 @@ typedef struct Value {
 Value make_array(const Value* values, int count);
 
 /**
- * Ctors for Value
+ * Ctors functions for Value
  */
+
 Value make_bool(bool value);
 
 Value make_cfunction(CFuncPtr fn);
@@ -61,6 +62,15 @@ Value make_string_from_buffer(const char* chars, int length);
 
 // Build a String, from a buffer ending with '\0', will create an internal ObjectString
 Value make_string_from_cstr(const char* str);
+
+/**
+ * Cast functions for Value
+ */
+
+/**
+ * Get the encapsulated ObjectString, or NULL
+ */
+ObjectString* to_string(Value value);
 
 /**
  * Print value to stdout

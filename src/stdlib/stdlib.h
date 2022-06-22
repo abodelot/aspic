@@ -1,5 +1,5 @@
-#ifndef ASPIC_CFUNC_H
-#define ASPIC_CFUNC_H
+#ifndef ASPIC_STDLIB_H
+#define ASPIC_STDLIB_H
 
 #include "value.h"
 

@@ -34,9 +34,9 @@ mrproper: clean
 	-@rm $(TARGET)
 
 format:
-	clang-format src/*c -i
+	clang-format $(shell find src -type f) -i
 
 lint:
-	clang-format src/*c --dry-run --Werror
+	clang-format $(shell find src -type f) --dry-run --Werror
 
 all: mrproper $(TARGET)

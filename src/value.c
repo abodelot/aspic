@@ -86,6 +86,13 @@ Value make_function(ObjectFunction* fn)
     return (Value) { .type = TYPE_OBJECT, .as.object = (Object*)fn };
 }
 
+ObjectString* to_string(Value value)
+{
+    return value.type == TYPE_OBJECT && value.as.object->type == OBJECT_STRING
+        ? (ObjectString*)value.as.object
+        : NULL;
+}
+
 // Define max number of printable collection objects (OBJECT_ARRAY).
 // Each printed collection has to be tracked to avoid infinite recursion in case
 // of circular references.

@@ -1,4 +1,4 @@
-#include "cfunc.h"
+#include "stdlib.h"
 #include "object.h"
 
 #include <stdio.h>

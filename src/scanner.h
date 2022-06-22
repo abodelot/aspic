@@ -9,14 +9,15 @@ typedef enum {
     TOKEN_RIGHT_BRACE,   // }
     TOKEN_LEFT_BRACKET,  // [
     TOKEN_RIGHT_BRACKET, // ]
-    TOKEN_COMMA,       // ,
-    TOKEN_DOT,         // .
-    TOKEN_MINUS,       // -
-    TOKEN_PERCENT,     // %
-    TOKEN_PLUS,        // +
-    TOKEN_SEMICOLON,   // ;
-    TOKEN_SLASH,       // /
-    TOKEN_STAR,        // *
+    TOKEN_COMMA,         // ,
+    TOKEN_DOT,           // .
+    TOKEN_MINUS,         // -
+    TOKEN_PERCENT,       // %
+    TOKEN_PLUS,          // +
+    TOKEN_SEMICOLON,     // ;
+    TOKEN_SLASH,         // /
+    TOKEN_STAR,          // *
+
     // One or more character tokens
     TOKEN_AMPER,         // &
     TOKEN_AMPER_AMPER,   // &&
@@ -30,10 +31,12 @@ typedef enum {
     TOKEN_GREATER_EQUAL, // >=
     TOKEN_LESS,          // <
     TOKEN_LESS_EQUAL,    // <=
+
     // Literals
     TOKEN_IDENTIFIER,
     TOKEN_STRING,
     TOKEN_NUMBER,
+
     // Keywords
     TOKEN_CLASS,
     TOKEN_CONST,
